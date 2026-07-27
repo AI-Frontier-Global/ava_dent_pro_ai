@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import {
   BookOpen, Video, MessageSquare, Search, ChevronDown, ChevronLeft,
-  PlayCircle, FileText, HelpCircle, Send, ArrowLeft, Sparkles, Bot,
+  PlayCircle, FileText, HelpCircle, Send, ArrowLeft, Sparkles, Bot, Loader2,
 } from 'lucide-react';
+import { helpbotChat } from '@/lib/helpbot';
 
 type Props = { onBack: () => void };
 
@@ -36,7 +37,8 @@ export default function HelpCenterPage({ onBack }: Props) {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
   const [chatMsg, setChatMsg] = useState('');
-  const [chatHistory, setChatHistory] = useState<{ role: 'user' | 'bot'; text: string }[]>([
+  const [chatLoading, setChatLoading] = useState(false);
+  const [chatHistory, setChatHistory] = useState<{ role: 'user' | 'bot'; text: string; ai?: boolean }[]>([
     { role: 'bot', text: 'مرحباً! أنا المساعد الذكي. كيف يمكنني مساعدتك اليوم؟' },
   ]);
 
@@ -44,22 +46,26 @@ export default function HelpCenterPage({ onBack }: Props) {
     !search || a.title.includes(search) || a.category.includes(search)
   );
 
-  const sendChat = () => {
-    if (!chatMsg.trim()) return;
+  const sendChat = async () => {
+    if (!chatMsg.trim() || chatLoading) return;
     const userMsg = chatMsg.trim();
     setChatHistory(h => [...h, { role: 'user', text: userMsg }]);
     setChatMsg('');
+    setChatLoading(true);
 
-    setTimeout(() => {
-      const lower = userMsg.toLowerCase();
-      let reply = 'شكراً لسؤالك! يمكنك تصفح المقالات أعلاه أو التواصل مع الدعم عبر تذكرة دعم.';
-      if (lower.includes('مريض') || lower.includes('تسجيل')) reply = 'لإضافة مريض: اذهب إلى قسم "المرضى" واضغط "إضافة مريض جديد".';
-      else if (lower.includes('موعد') || lower.includes('جدول')) reply = 'لجدولة موعد: اذهب إلى "الجدولة"، اختر اليوم والسعة، واضغط على المربع الفارغ.';
-      else if (lower.includes('فاتورة') || lower.includes('دفع')) reply = 'لإنشاء فاتورة: في "الفواتير" اضغط "فاتورة جديدة" واختر المريض والخدمات.';
-      else if (lower.includes('ذكاء') || lower.includes('ai')) reply = 'لتفعيل الذكاء الاصطناعي: اذهب إلى "المساعد الذكي" في الإعدادات واضغط "تفعيل".';
-      else if (lower.includes('اشتراك') || lower.includes('باقة')) reply = 'يمكنك تغيير باقتك من صفحة التسعير. لدينا 3 باقات: أساسية، احترافية، ومؤسسية.';
-      setChatHistory(h => [...h, { role: 'bot', text: reply }]);
-    }, 800);
+    try {
+      const messages = chatHistory
+        .filter(m => m.text !== 'مرحباً! أنا المساعد الذكي. كيف يمكنني مساعدتك اليوم؟')
+        .map(m => ({ role: (m.role === 'bot' ? 'assistant' : 'user') as 'user' | 'assistant', content: m.text }));
+      messages.push({ role: 'user', content: userMsg });
+
+      const result = await helpbotChat(messages);
+      setChatHistory(h => [...h, { role: 'bot', text: result.text, ai: result.usedAI }]);
+    } catch {
+      setChatHistory(h => [...h, { role: 'bot', text: 'عذراً، حدث خطأ. حاول مرة أخرى.' }]);
+    } finally {
+      setChatLoading(false);
+    }
   };
 
   return (
@@ -195,10 +201,23 @@ export default function HelpCenterPage({ onBack }: Props) {
               {chatHistory.map((m, i) => (
                 <div key={i} className={`flex ${m.role === 'user' ? 'justify-start' : 'justify-end'}`}>
                   <div className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm ${m.role === 'user' ? 'bg-sky-500 text-white' : 'bg-slate-100 text-slate-700'}`}>
+                    {m.role === 'bot' && m.ai && (
+                      <div className="mb-1 flex items-center gap-1 text-[10px] font-semibold text-sky-600">
+                        <Sparkles size={10} /> رد ذكي
+                      </div>
+                    )}
                     {m.text}
                   </div>
                 </div>
               ))}
+              {chatLoading && (
+                <div className="flex justify-end">
+                  <div className="flex items-center gap-2 rounded-2xl bg-slate-100 px-3 py-2 text-sm text-slate-500">
+                    <Loader2 size={14} className="animate-spin" />
+                    يفكر...
+                  </div>
+                </div>
+              )}
             </div>
             <div className="flex items-center gap-2 border-t border-slate-200 p-3">
               <input
@@ -207,9 +226,10 @@ export default function HelpCenterPage({ onBack }: Props) {
                 onChange={(e) => setChatMsg(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && sendChat()}
                 placeholder="اكتب رسالتك..."
-                className="flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-sky-400"
+                disabled={chatLoading}
+                className="flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-sky-400 disabled:opacity-50"
               />
-              <button onClick={sendChat} className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-500 text-white transition-colors hover:bg-sky-600">
+              <button onClick={sendChat} disabled={chatLoading || !chatMsg.trim()} className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-500 text-white transition-colors hover:bg-sky-600 disabled:opacity-40">
                 <Send size={16} />
               </button>
             </div>
