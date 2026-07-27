@@ -7,6 +7,7 @@ const config = JSON.parse(readFileSync(fileURLToPath(new URL('./config.json', im
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  base: './',
   plugins: [react()],
   resolve: {
     alias: {

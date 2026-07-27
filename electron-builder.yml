@@ -1,0 +1,41 @@
+appId: com.smileclinic.dental
+productName: "Smile Clinic System"
+copyright: "Copyright © 2026 Smile Clinic"
+artifactName: "SmileClinic-Setup-${version}.${ext}"
+
+directories:
+  output: release
+  buildResources: build
+
+files:
+  - dist/**/*
+  - electron/**/*
+  - local-ollama-bridge.js
+  - config.json
+  - package.json
+  - node_modules/**/*
+  - "!**/*.{md,txt}"
+  - "!src/**"
+  - "!public/**"
+
+win:
+  target:
+    - nsis
+  icon: build/icon.ico
+  requestedExecutionLevel: asInvoker
+  forceCodeSigning: false
+  signAndEditExecutable: false
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: "Smile Clinic System"
+  installerIcon: build/icon.ico
+  uninstallerIcon: build/icon.ico
+  installerHeaderIcon: build/icon.ico
+  deleteAppDataOnUninstall: false
+  displayLanguageSelector: false
+  language: "1028"
