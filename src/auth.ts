@@ -2,6 +2,13 @@ import { useEffect, useState, useCallback } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from './lib/supabase';
 
+export function getRedirectTo(): string {
+  const envUrl = import.meta.env.VITE_APP_URL as string | undefined;
+  if (envUrl && envUrl.startsWith('http')) return envUrl.replace(/\/$/, '');
+  if (typeof window !== 'undefined' && window.location?.origin) return window.location.origin;
+  return 'https://ava-dent-pro-ai.vercel.app';
+}
+
 export function useAuth() {
   const [session, setSession] = useState<Session | null>(null);
   const [ready, setReady] = useState(false);
@@ -40,14 +47,14 @@ export function useAuth() {
   }, []);
 
   const signUp = useCallback(async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({ email, password });
+    const { error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: getRedirectTo() } });
     if (error) throw error;
   }, []);
 
   const signInWithGoogle = useCallback(async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: window.location.origin },
+      options: { redirectTo: getRedirectTo() },
     });
     if (error) throw error;
   }, []);

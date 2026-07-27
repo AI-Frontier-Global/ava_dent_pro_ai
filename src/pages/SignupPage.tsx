@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Stethoscope, ArrowLeft, Mail, Lock, Building2, User, Phone, Globe, Check, Eye, EyeOff, Sparkles } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { getRedirectTo } from '@/auth';
 import type { PlanId, ClinicRole } from '@/types/saas';
 import { COUNTRIES, CURRENCIES } from '@/types/saas';
 
@@ -68,6 +69,7 @@ export default function SignupPage({ onBack, onSuccess, selectedPlan, signIn }: 
       const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email: email.trim(),
         password,
+        options: { emailRedirectTo: getRedirectTo() },
       });
       if (signUpError) throw signUpError;
 
