@@ -1,0 +1,31 @@
+{
+  "ports": {
+    "bridge": 3001,
+    "web": 5173
+  },
+  "ollama": {
+    "host": "http://localhost:11434",
+    "models": ["llama3.2", "phi3"],
+    "default_model": "llama3.2"
+  },
+  "ai": {
+    "provider": "local",
+    "system_prompt": "أنت مساعد طبي متخصص في إدارة عيادات الأسنان في الأردن، تجيب باختصار ووضوح.",
+    "cloud_fallback": false
+  },
+  "api_keys": {
+    "openai": "",
+    "anthropic": "",
+    "google": ""
+  },
+  "network": {
+    "host": "0.0.0.0",
+    "allow_lan": true
+  },
+  "backup": {
+    "enabled": true,
+    "schedule": "daily",
+    "folder": "Backups",
+    "max_copies": 30
+  }
+}

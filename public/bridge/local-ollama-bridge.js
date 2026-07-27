@@ -20,12 +20,19 @@ const express = require('express');
 const cors = require('cors');
 const { spawn, execFile } = require('child_process');
 const http = require('http');
+const fs = require('fs');
+const path = require('path');
 
-const BRIDGE_PORT = process.env.BRIDGE_PORT || 3001;
-const OLLAMA_HOST = process.env.OLLAMA_HOST || 'http://localhost:11434';
-const TUNNEL_PORT = process.env.TUNNEL_PORT || 0; // 0 = منفذ عشوائي
-const SYSTEM_PROMPT =
-  'أنت مساعد طبي متخصص في إدارة عيادات الأسنان في الأردن، تجيب باختصار ووضوح.';
+// قراءة إعدادات config.json
+let config = { ports: { bridge: 3001 }, ollama: { host: 'http://localhost:11434', models: ['llama3.2', 'phi3'], default_model: 'llama3.2' }, ai: { system_prompt: 'أنت مساعد طبي متخصص في إدارة عيادات الأسنان في الأردن، تجيب باختصار ووضوح.' } };
+try {
+  const raw = fs.readFileSync(path.join(__dirname, 'config.json'), 'utf-8');
+  config = { ...config, ...JSON.parse(raw) };
+} catch { /* استخدام الافتراضي */ }
+
+const BRIDGE_PORT = process.env.BRIDGE_PORT || config.ports.bridge || 3001;
+const OLLAMA_HOST = process.env.OLLAMA_HOST || config.ollama.host || 'http://localhost:11434';
+const SYSTEM_PROMPT = config.ai.system_prompt;
 
 const app = express();
 app.use(cors());
@@ -283,7 +290,7 @@ app.get('/api/tunnel', (_req, res) => {
   res.json({ url: tunnelUrl, active: !!tunnelUrl });
 });
 
-app.listen(BRIDGE_PORT, async () => {
+app.listen(BRIDGE_PORT, '0.0.0.0', async () => {
   console.log(`\n  ✅ جسر Ollama المحلي يعمل على:`);
   console.log(`     http://localhost:${BRIDGE_PORT}`);
   console.log(`  ✅ خادم Ollama المستهدف:`);

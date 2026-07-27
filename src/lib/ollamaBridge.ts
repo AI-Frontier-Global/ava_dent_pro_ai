@@ -24,7 +24,13 @@ export interface ChatTurn {
 // لتجاوز قيود CORS و mixed-content. عند التشغيل على bolt.host نستخدم localhost مباشرة.
 function resolveBridgeUrl(bridgeUrl: string): string {
   const href = typeof window !== 'undefined' ? window.location.hostname : '';
-  const isLocal = href === 'localhost' || href === '127.0.0.1' || href === '0.0.0.0';
+  const isLocal =
+    href === 'localhost' ||
+    href === '127.0.0.1' ||
+    href === '0.0.0.0' ||
+    /^192\.168\./.test(href) ||
+    /^10\./.test(href) ||
+    /^172\.(1[6-9]|2\d|3[01])\./.test(href);
   if (isLocal) {
     return '/bridge-api'; // يُعاد توجيهه عبر Vite proxy إلى http://localhost:3001/api
   }
