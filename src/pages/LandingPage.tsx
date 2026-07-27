@@ -51,8 +51,6 @@ import FAQ from '@/components/FAQ';
 import ClientLogos from '@/components/ClientLogos';
 import ChatWidget from '@/components/ChatWidget';
 
-type Props = { onLaunchDemo: () => void; onGoToWhyUs: () => void; onGoToAIShowcase: () => void };
-
 /* ============ Image URLs ============ */
 const IMG = {
   clinic: 'https://images.unsplash.com/photo-1606811841689-23dfddce3e95?auto=format&fit=crop&w=1600&q=80',
@@ -93,7 +91,9 @@ function useSmoothScroll() {
 }
 
 /* ============ Navbar ============ */
-function Navbar({ onLaunchDemo }: { onLaunchDemo: () => void }) {
+type Props = { onLaunchDemo: () => void; onGoToWhyUs: () => void; onGoToAIShowcase: () => void; onGoToPricing: () => void; onGoToHelpCenter: () => void };
+
+function Navbar({ onLaunchDemo, onGoToPricing, onGoToHelpCenter }: { onLaunchDemo: () => void; onGoToPricing: () => void; onGoToHelpCenter: () => void }) {
   const [open, setOpen] = useState(false);
   const links = [
     { label: 'الميزات', href: '#features' },
@@ -109,7 +109,7 @@ function Navbar({ onLaunchDemo }: { onLaunchDemo: () => void }) {
           <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-400 to-blue-600 text-white shadow-md">
             <Stethoscope size={22} />
           </div>
-          <span className="text-lg font-extrabold text-slate-800">عيادة سمايل</span>
+          <span className="text-lg font-extrabold text-slate-800">DentalPro</span>
         </div>
         <nav className="hidden items-center gap-8 md:flex">
           {links.map((l) => (
@@ -117,12 +117,15 @@ function Navbar({ onLaunchDemo }: { onLaunchDemo: () => void }) {
               {l.label}
             </a>
           ))}
+          <button onClick={onGoToHelpCenter} className="text-sm font-semibold text-slate-600 hover:text-sky-600">
+            مركز المساعدة
+          </button>
         </nav>
         <div className="hidden items-center gap-3 md:flex">
           <button onClick={onLaunchDemo} className="text-sm font-semibold text-sky-600 hover:text-sky-700">
             دخول العيادة
           </button>
-          <button onClick={onLaunchDemo} className="rounded-xl bg-gradient-to-l from-sky-500 to-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:shadow-md">
+          <button onClick={onGoToPricing} className="rounded-xl bg-gradient-to-l from-sky-500 to-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:shadow-md">
             تجربة مجانية
           </button>
         </div>
@@ -137,7 +140,8 @@ function Navbar({ onLaunchDemo }: { onLaunchDemo: () => void }) {
               {l.label}
             </a>
           ))}
-          <button onClick={onLaunchDemo} className="mt-3 w-full rounded-xl bg-gradient-to-l from-sky-500 to-blue-600 px-5 py-2.5 text-sm font-semibold text-white">
+          <button onClick={() => { setOpen(false); onGoToHelpCenter(); }} className="block w-full py-2 text-right text-sm font-semibold text-slate-600">مركز المساعدة</button>
+          <button onClick={() => { setOpen(false); onGoToPricing(); }} className="mt-3 w-full rounded-xl bg-gradient-to-l from-sky-500 to-blue-600 px-5 py-2.5 text-sm font-semibold text-white">
             تجربة مجانية
           </button>
         </div>
@@ -964,12 +968,12 @@ function AIShowcaseBanner({ onGoToAIShowcase }: { onGoToAIShowcase: () => void }
   );
 }
 
-export default function LandingPage({ onLaunchDemo, onGoToWhyUs, onGoToAIShowcase }: Props) {
+export default function LandingPage({ onLaunchDemo, onGoToWhyUs, onGoToAIShowcase, onGoToPricing, onGoToHelpCenter }: Props) {
   useSmoothScroll();
 
   return (
     <div className="min-h-screen bg-white" dir="rtl">
-      <Navbar onLaunchDemo={onLaunchDemo} />
+      <Navbar onLaunchDemo={onLaunchDemo} onGoToPricing={onGoToPricing} onGoToHelpCenter={onGoToHelpCenter} />
       <Hero onLaunchDemo={onLaunchDemo} onGoToWhyUs={onGoToWhyUs} onGoToAIShowcase={onGoToAIShowcase} />
       <TrustedBy />
       <AllInOne />

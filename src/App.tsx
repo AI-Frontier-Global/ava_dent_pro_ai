@@ -30,6 +30,11 @@ import TreatmentPage from './pages/TreatmentPage';
 import InsurancePage from './pages/InsurancePage';
 import MembershipPage from './pages/MembershipPage';
 import ReportsPage from './pages/ReportsPage';
+import PricingPage from './pages/PricingPage';
+import SignupPage from './pages/SignupPage';
+import SuperAdminPage from './pages/SuperAdminPage';
+import HelpCenterPage from './pages/HelpCenterPage';
+import type { PlanId } from './types/saas';
 
 const pageMeta: Record<Page, { title: string; subtitle: string }> = {
   dashboard: { title: 'لوحة التحكم', subtitle: 'نظرة عامة على نشاط العيادة اليوم' },
@@ -51,7 +56,7 @@ const pageMeta: Record<Page, { title: string; subtitle: string }> = {
 };
 
 function App() {
-  const [view, setView] = useState<'landing' | 'login' | 'app' | 'why-us' | 'ai-showcase'>('landing');
+  const [view, setView] = useState<'landing' | 'login' | 'app' | 'why-us' | 'ai-showcase' | 'pricing' | 'signup' | 'superadmin' | 'helpcenter'>('landing');
   const store = useStore();
   const { session, ready, signIn, signUp, signInWithGoogle, signOut } = useAuth();
   const [page, setPage] = useState<Page>('dashboard');
@@ -61,7 +66,7 @@ function App() {
   // Once we know the session, route automatically
   useEffect(() => {
     if (!ready) return;
-    if (session && (view === 'login' || view === 'landing' || view === 'why-us' || view === 'ai-showcase')) {
+    if (session && (view === 'login' || view === 'landing' || view === 'why-us' || view === 'ai-showcase' || view === 'signup')) {
       setView('app');
       setPage('dashboard');
     }
@@ -78,6 +83,10 @@ function App() {
   const backToLanding = () => setView('landing');
   const goToWhyUs = () => setView('why-us');
   const goToAIShowcase = () => setView('ai-showcase');
+  const goToPricing = () => setView('pricing');
+  const goToHelpCenter = () => setView('helpcenter');
+  const goToSuperAdmin = () => setView('superadmin');
+  const [selectedPlan, setSelectedPlan] = useState<PlanId>('pro');
   const launchDemo = () => {
     setView('app');
     setPage('dashboard');
@@ -102,9 +111,37 @@ function App() {
   if (view === 'landing' && !session) {
     return (
       <ToastProvider>
-        <LandingPage onLaunchDemo={launchDemo} onGoToWhyUs={goToWhyUs} onGoToAIShowcase={goToAIShowcase} />
+        <LandingPage onLaunchDemo={launchDemo} onGoToWhyUs={goToWhyUs} onGoToAIShowcase={goToAIShowcase} onGoToPricing={goToPricing} onGoToHelpCenter={goToHelpCenter} />
       </ToastProvider>
     );
+  }
+
+  if (view === 'pricing' && !session) {
+    return (
+      <PricingPage
+        onBack={backToLanding}
+        onSelectPlan={(planId) => { setSelectedPlan(planId); setView('signup'); }}
+      />
+    );
+  }
+
+  if (view === 'signup' && !session) {
+    return (
+      <SignupPage
+        onBack={() => setView('pricing')}
+        onSuccess={handleLogin}
+        selectedPlan={selectedPlan}
+        signIn={signIn}
+      />
+    );
+  }
+
+  if (view === 'helpcenter') {
+    return <HelpCenterPage onBack={backToLanding} />;
+  }
+
+  if (view === 'superadmin') {
+    return <SuperAdminPage onBack={() => setView('app')} />;
   }
 
   if ((view === 'login' || !session) && view !== 'why-us') {
