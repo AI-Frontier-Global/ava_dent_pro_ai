@@ -27,7 +27,6 @@ import {
   AlertCircle,
   CircleDot,
   BookOpen,
-  RefreshCw,
 } from 'lucide-react';
 import { useToast } from '../components/Toast';
 import { resetSetup } from '../lib/bridge-manager';
