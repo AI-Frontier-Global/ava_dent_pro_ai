@@ -1,0 +1,358 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   Material Design 3 + Fluent Design 2 — Design Token System
+   ============================================================ */
+
+@layer base {
+  :root {
+    /* ── Color tokens (light theme) ── */
+    --color-bg-canvas: #f8fafc;       /* slate-50 — page background */
+    --color-bg-surface: #ffffff;      /* white — cards, panels */
+    --color-bg-surface-variant: #f1f5f9; /* slate-100 — subtle fills */
+    --color-border-subtle: rgba(148, 163, 184, 0.2);  /* slate-400/20 */
+    --color-border-default: rgba(148, 163, 184, 0.35); /* slate-400/35 */
+    --color-border-strong: rgba(100, 116, 139, 0.4);  /* slate-500/40 */
+    --color-text-primary: #0f172a;    /* slate-900 */
+    --color-text-secondary: #475569;  /* slate-600 */
+    --color-text-tertiary: #94a3b8;   /* slate-400 */
+    --color-text-on-brand: #ffffff;
+    --color-brand: #0d9488;          /* brand-600 */
+    --color-brand-hover: #0f766e;    /* brand-700 */
+    --color-brand-container: #f0fdfa; /* brand-50 */
+    --color-brand-on-container: #0f766e; /* brand-700 */
+    --color-accent: #0891b2;          /* accent-600 */
+    --color-accent-container: #ecfeff; /* accent-50 */
+
+    /* ── Elevation tokens ── */
+    --elev-1: 0 1px 2px 0 rgba(15, 23, 42, 0.04), 0 1px 3px 0 rgba(15, 23, 42, 0.05);
+    --elev-2: 0 2px 4px -1px rgba(15, 23, 42, 0.06), 0 4px 6px -1px rgba(15, 23, 42, 0.08);
+    --elev-3: 0 4px 8px -2px rgba(15, 23, 42, 0.08), 0 10px 20px -4px rgba(15, 23, 42, 0.10);
+    --elev-4: 0 8px 16px -4px rgba(15, 23, 42, 0.10), 0 20px 40px -8px rgba(15, 23, 42, 0.12);
+    --elev-5: 0 16px 32px -8px rgba(15, 23, 42, 0.14), 0 32px 64px -16px rgba(15, 23, 42, 0.16);
+
+    /* ── Shape tokens (M3 shape scale) ── */
+    --shape-xs: 4px;
+    --shape-sm: 8px;
+    --shape-md: 12px;
+    --shape-lg: 16px;
+    --shape-xl: 20px;
+    --shape-2xl: 24px;
+
+    /* ── Motion tokens ── */
+    --motion-sm: 150ms;
+    --motion-md: 250ms;
+    --motion-lg: 300ms;
+    --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+    --ease-emphasized: cubic-bezier(0.2, 0, 0, 1);
+    --ease-decelerate: cubic-bezier(0, 0, 0, 1);
+  }
+
+  html {
+    font-family: 'Tajawal', 'Cairo', system-ui, sans-serif;
+  }
+  body {
+    @apply bg-slate-50 text-slate-800 antialiased;
+    background-color: var(--color-bg-canvas);
+    color: var(--color-text-primary);
+  }
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* ── M3 state layer utility ── */
+  .state-layer {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+  }
+  .state-layer::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: currentColor;
+    opacity: 0;
+    transition: opacity var(--motion-sm) var(--ease-smooth);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .state-layer:hover::before { opacity: 0.06; }
+  .state-layer:active::before { opacity: 0.12; }
+  .state-layer:focus-visible::before { opacity: 0.10; }
+}
+
+/* ============================================================
+   Component Layer — Unified M3/Fluent components
+   ============================================================ */
+
+@layer components {
+  /* ────────────── Buttons ────────────── */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-md px-5 py-2.5 text-sm font-semibold text-white shadow-elev-1 transition-all duration-sm ease-smooth hover:shadow-elev-2 hover:brightness-110 active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none;
+    background-color: var(--color-brand);
+  }
+  .btn-primary:hover { background-color: var(--color-brand-hover); }
+
+  .btn-accent {
+    @apply inline-flex items-center justify-center gap-2 rounded-md px-5 py-2.5 text-sm font-semibold text-white shadow-elev-1 transition-all duration-sm ease-smooth hover:shadow-elev-2 hover:brightness-110 active:scale-[0.97] disabled:opacity-50;
+    background-color: var(--color-accent);
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-md border bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 shadow-elev-1 transition-all duration-sm ease-smooth hover:shadow-elev-2 active:scale-[0.97] disabled:opacity-50;
+    border-color: var(--color-border-default);
+  }
+  .btn-secondary:hover { background-color: var(--color-bg-surface-variant); }
+
+  .btn-success {
+    @apply inline-flex items-center justify-center gap-2 rounded-md bg-success-600 px-5 py-2.5 text-sm font-semibold text-white shadow-elev-1 transition-all duration-sm ease-smooth hover:bg-success-700 hover:shadow-elev-2 active:scale-[0.97];
+  }
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 rounded-md bg-error-50 px-5 py-2.5 text-sm font-semibold text-error-600 transition-all duration-sm ease-smooth hover:bg-error-100 active:scale-[0.97];
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-sm px-3 py-2 text-sm font-medium text-slate-600 transition-colors duration-sm ease-smooth hover:bg-slate-100 active:scale-[0.97];
+  }
+  .btn-icon {
+    @apply inline-flex items-center justify-center rounded-sm p-2 text-slate-500 transition-colors duration-sm ease-smooth hover:bg-slate-100 hover:text-slate-700 active:scale-[0.95];
+  }
+
+  /* ────────────── Surfaces ────────────── */
+  .card {
+    @apply rounded-lg bg-white transition-shadow duration-md ease-smooth;
+    box-shadow: var(--elev-1);
+    border: 1px solid var(--color-border-subtle);
+  }
+  .card-hover {
+    @apply transition-all duration-lg ease-smooth hover:-translate-y-0.5;
+  }
+  .card-hover:hover {
+    box-shadow: var(--elev-3);
+    border-color: var(--color-border-default);
+  }
+  .panel {
+    @apply rounded-lg bg-white;
+    box-shadow: var(--elev-1);
+    border: 1px solid var(--color-border-subtle);
+  }
+
+  /* ────────────── Forms ────────────── */
+  .input {
+    @apply w-full rounded-md bg-white px-3.5 py-2.5 text-sm text-slate-800 outline-none transition-all duration-sm ease-smooth placeholder:text-slate-400;
+    border: 1px solid var(--color-border-default);
+  }
+  .input:focus {
+    border-color: var(--color-brand);
+    box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.08);
+  }
+  .label {
+    @apply mb-1.5 block text-xs font-semibold text-slate-600;
+  }
+
+  /* ────────────── Badges & Chips ────────────── */
+  .badge {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-sm px-2 py-0.5 text-[11px] font-medium;
+  }
+
+  /* ────────────── Navigation (M3 Navigation Drawer) ────────────── */
+  .nav-link {
+    @apply state-layer flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-all duration-sm ease-smooth;
+  }
+  .nav-link-active {
+    @apply text-brand-700;
+    background-color: var(--color-brand-container);
+  }
+  .nav-link-idle {
+    @apply text-slate-600 hover:bg-slate-100 hover:text-slate-900;
+  }
+
+  /* Dark sidebar nav (Fluent acrylic dark) */
+  .nav-link-dark {
+    @apply state-layer flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-all duration-sm ease-smooth;
+  }
+  .nav-link-dark-active {
+    @apply text-brand-300;
+    background-color: rgba(20, 184, 166, 0.12);
+  }
+  .nav-link-dark-idle {
+    @apply text-slate-400 hover:bg-white/5 hover:text-slate-200;
+  }
+
+  /* ────────────── Table (M3 data table) ────────────── */
+  .tbl {
+    @apply w-full text-right text-sm;
+  }
+  .tbl thead th {
+    @apply border-b px-5 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500;
+    background-color: var(--color-bg-surface-variant);
+    border-color: var(--color-border-subtle);
+  }
+  .tbl tbody tr {
+    @apply transition-colors duration-xs;
+  }
+  .tbl tbody tr:hover {
+    background-color: var(--color-bg-surface-variant);
+  }
+  .tbl tbody td {
+    @apply border-b px-5 py-3.5 text-slate-700;
+    border-color: var(--color-border-subtle);
+  }
+
+  /* ────────────── Segmented Control (M3) ────────────── */
+  .seg-control {
+    @apply inline-flex items-center rounded-md border bg-slate-50 p-1;
+    border-color: var(--color-border-subtle);
+  }
+  .seg-btn {
+    @apply rounded-sm px-3 py-1.5 text-sm font-medium text-slate-500 transition-all duration-sm ease-smooth;
+  }
+  .seg-btn-active {
+    @apply bg-white text-brand-700 shadow-elev-1;
+  }
+}
+
+/* ────────────── Scrollbar ────────────── */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* ────────────── Animations (M3 motion) ────────────── */
+@keyframes modal-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-modal-in { animation: modal-in 0.25s var(--ease-emphasized); }
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.animate-fade-in { animation: fade-in 0.15s var(--ease-decelerate); }
+
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.animate-slide-in { animation: slide-in-right 0.25s var(--ease-emphasized); }
+
+@keyframes slide-in-left {
+  from { opacity: 0; transform: translateX(-20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.animate-slide-in-left { animation: slide-in-left 0.25s var(--ease-emphasized); }
+
+@keyframes grow-bar {
+  from { transform: scaleY(0); }
+  to   { transform: scaleY(1); }
+}
+.animate-grow-bar {
+  animation: grow-bar 0.5s var(--ease-smooth);
+  transform-origin: bottom;
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+.animate-pulse-soft { animation: pulse-soft 2s ease-in-out infinite; }
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-up { animation: fade-in-up 0.6s var(--ease-emphasized); }
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-20px); }
+}
+.animate-float { animation: float 6s ease-in-out infinite; }
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(20, 184, 166, 0.3); }
+  50% { box-shadow: 0 0 40px rgba(20, 184, 166, 0.5); }
+}
+.animate-pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
+
+@keyframes shimmer {
+  100% { transform: translateX(100%); }
+}
+.animate-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+  animation: shimmer 1.5s infinite;
+}
+
+/* ────────────── Avatar animations ────────────── */
+@keyframes mouthMove {
+  0%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(1.3); }
+}
+@keyframes blink {
+  0%, 96%, 100% { transform: scaleY(1); }
+  98% { transform: scaleY(0.1); }
+}
+@keyframes headTilt {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-2deg); }
+  75% { transform: rotate(2deg); }
+}
+.avatar-speaking { animation: headTilt 3s ease-in-out infinite; }
+.avatar-speaking::before {
+  content: '';
+  position: absolute;
+  bottom: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 8px;
+  height: 4px;
+  background: rgba(236, 72, 153, 0.6);
+  border-radius: 50%;
+  animation: mouthMove 0.3s ease-in-out infinite;
+}
+.avatar-blink { animation: blink 4s ease-in-out infinite; }
+
+/* ────────────── Chat Widget mobile ────────────── */
+@media (max-width: 640px) {
+  .chat-widget-mobile {
+    right: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    bottom: 0 !important;
+    border-radius: 0 !important;
+  }
+}
+.chat-open { overflow: hidden; }
+
+.overflow-y-auto::-webkit-scrollbar { width: 6px; }
+.overflow-y-auto::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+.overflow-y-auto::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 10px;
+}
+.overflow-y-auto::-webkit-scrollbar-thumb:hover { background: #555; }
