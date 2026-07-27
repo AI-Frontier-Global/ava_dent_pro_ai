@@ -13,8 +13,13 @@ import SettingsPage from './pages/SettingsPage';
 import AIAssistantPage from './pages/AIAssistantPage';
 import AIHubPage from './pages/AIHubPage';
 import AICenter from './pages/AICenter';
+import TechnologyPage from './pages/TechnologyPage';
+import SetupWizard from './pages/SetupWizard';
 import ComingSoon from './components/ComingSoon';
 import ChatWidget from './components/ChatWidget';
+import BridgeStatusIndicator from './components/BridgeStatusIndicator';
+import AIPartnersShowcase from './components/AIPartnersShowcase';
+import { isSetupComplete, resetSetup } from './lib/bridge-manager';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import WhyUsPage from './pages/WhyUsPage';
@@ -41,6 +46,7 @@ const pageMeta: Record<Page, { title: string; subtitle: string }> = {
   'ai-assistant': { title: 'المساعد الذكي', subtitle: 'تشغيل وإدارة مساعد الذكاء الاصطناعي المحلي' },
   'ai-hub': { title: 'مركز الذكاء الاصطناعي', subtitle: 'تحليلات ذكية وتنبؤ بالغياب ومساعد صوتي' },
   'ai-center': { title: 'مركز الموفرين', subtitle: 'إدارة موفرين الذكاء الاصطناعي وتتبّع التكاليف' },
+  'technology': { title: 'التقنيات المستخدمة', subtitle: 'نظرة مفصّلة على تقنيات الذكاء الاصطناعي' },
   settings: { title: 'الإعدادات', subtitle: 'إدارة إعدادات العيادة والتكاملات' },
 };
 
@@ -50,6 +56,7 @@ function App() {
   const { session, ready, signIn, signUp, signInWithGoogle, signOut } = useAuth();
   const [page, setPage] = useState<Page>('dashboard');
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [showSetup, setShowSetup] = useState(false);
 
   // Once we know the session, route automatically
   useEffect(() => {
@@ -63,10 +70,18 @@ function App() {
     }
   }, [session, ready, view]);
 
-  const launchDemo = () => setView('login');
+  useEffect(() => {
+    if (view === 'app' && !isSetupComplete()) {
+      setShowSetup(true);
+    }
+  }, [view]);
   const backToLanding = () => setView('landing');
   const goToWhyUs = () => setView('why-us');
   const goToAIShowcase = () => setView('ai-showcase');
+  const launchDemo = () => {
+    setView('app');
+    setPage('dashboard');
+  };
   const handleLogin = () => {
     setView('app');
     setPage('dashboard');
@@ -144,6 +159,8 @@ function App() {
         return <AIHubPage store={store} />;
       case 'ai-center':
         return <AICenter store={store} />;
+      case 'technology':
+        return <TechnologyPage />;
       case 'settings':
         return <SettingsPage store={store} />;
       default:
@@ -194,11 +211,23 @@ function App() {
                 <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-brand-500" />
               </div>
             ) : (
-              renderPage()
+              <>
+                {renderPage()}
+                {page === 'dashboard' && (
+                  <div className="mt-6">
+                    <AIPartnersShowcase />
+                  </div>
+                )}
+              </>
             )}
           </main>
         </div>
       </div>
+      {showSetup && (
+        <SetupWizard
+          onComplete={() => setShowSetup(false)}
+        />
+      )}
       <ChatWidget />
     </ToastProvider>
   );

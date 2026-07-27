@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useMemo } from 'react';
 import { Menu, Search, Bell, ChevronDown, Plus, Command, Brain, X, User, Receipt, Calendar, ArrowRight } from 'lucide-react';
 import { getStatus } from '../lib/ollamaBridge';
 import { supabase } from '../lib/supabase';
+import BridgeStatusIndicator from './BridgeStatusIndicator';
 import type { Store } from '../store';
 import type { Patient, Invoice, Appointment } from '../types';
 
@@ -167,6 +168,8 @@ export default function Topbar({ title, subtitle, onOpenMobile, onNavigateSettin
                 {bridgeOnline ? 'المساعد متصل' : 'تفعيل المساعد'}
               </span>
             </button>
+
+            <BridgeStatusIndicator onClick={onNavigateSettings} />
 
             <button className="btn-primary hidden sm:inline-flex">
               <Plus size={16} />

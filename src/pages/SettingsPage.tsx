@@ -27,8 +27,10 @@ import {
   AlertCircle,
   CircleDot,
   BookOpen,
+  RefreshCw,
 } from 'lucide-react';
 import { useToast } from '../components/Toast';
+import { resetSetup } from '../lib/bridge-manager';
 import type { Store } from '../store';
 import type { ClinicSettings } from '../types';
 import {
@@ -413,6 +415,31 @@ export function AISettingsPanel() {
             </ol>
           </div>
         )}
+      </section>
+
+      {/* ============ إعادة ضبط التثبيت ============ */}
+      <section className="card p-5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-md bg-error-100 text-error-600">
+              <RefreshCw size={18} />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-slate-900">إعادة ضبط التثبيت الأولي</h3>
+              <p className="text-xs text-slate-500">إظهار معالج التثبيت مرة أخرى عند الدخول التالي</p>
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              resetSetup();
+              toast('تم إعادة ضبط التثبيت — سيظهر المعالج في الدخول التالي', 'success');
+            }}
+            className="btn-ghost text-xs text-error-600 hover:bg-error-50"
+          >
+            <RefreshCw size={14} />
+            إعادة الضبط
+          </button>
+        </div>
       </section>
 
       {/* ============ مؤشر الحالة ============ */}

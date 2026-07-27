@@ -18,6 +18,7 @@ import {
   Sparkles,
   BarChart3,
   Cpu,
+  Layers,
 } from 'lucide-react';
 
 export type Page =
@@ -35,6 +36,7 @@ export type Page =
   | 'ai-assistant'
   | 'ai-hub'
   | 'ai-center'
+  | 'technology'
   | 'settings';
 
 type NavItem = {
@@ -64,6 +66,7 @@ const sections: { title: string; items: NavItem[] }[] = [
     items: [
       { id: 'ai-hub', label: 'مركز الذكاء الاصطناعي', icon: Sparkles },
       { id: 'ai-center', label: 'مركز الموفرين', icon: Cpu },
+      { id: 'technology', label: 'التقنيات المستخدمة', icon: Layers },
       { id: 'ai-assistant', label: 'المساعد الذكي المحلي', icon: Brain },
     ],
   },
