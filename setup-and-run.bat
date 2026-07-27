@@ -1,213 +1,194 @@
+@chcp 65001 >nul
 @echo off
-chcp 65001 >nul 2>&1
-title نظام إدارة عيادة الأسنان - التثبيت والتشغيل التلقائي
+title Dental Clinic System - Auto Setup and Run
 mode con: cols=80 lines=30
 color 0A
 
 REM ============================================================
-REM  نظام إدارة عيادة الأسنان - التثبيت والتشغيل بنقرة واحدة
-REM  ============================================================
-REM  هذا الملف يقوم بكل شيء تلقائياً:
-REM    1) يطلب صلاحيات Administrator
-REM    2) يفحص ويثبّت Node.js
-REM    3) يفحص ويثبّت Ollama
-REM    4) يحمّل نماذج الذكاء الاصطناعي
-REM    5) يثبّت مكتبات npm
-REM    6) يشغّل الجسر + النظام
-REM    7) يفتح المتصفح تلقائياً
+REM  Dental Clinic Management System - One-Click Setup
+REM  Auto-installs: Node.js, Ollama, AI models, npm packages
+REM  Then runs the bridge + web server and opens the browser
 REM ============================================================
 
 set "ROOT=%~dp0"
 cd /d "%ROOT%"
 
-REM --- طلب صلاحيات Administrator ---
+REM --- Request Administrator privileges ---
 net session >nul 2>&1
 if %errorLevel% neq 0 (
   echo.
-  echo  [!] يحتاج النظام إلى صلاحيات Administrator للتثبيت.
-  echo      سيُعاد تشغيل الملف بصلاحيات Administrator الآن...
+  echo  [!] Administrator privileges are required for installation.
+  echo      Restarting this file as Administrator...
   timeout /t 2 >nul
   powershell -Command "Start-Process -FilePath '%~f0' -Verb RunAs"
   exit /b
 )
 
 echo.
-echo  ═══════════════════════════════════════════════════════
+echo  ========================================================
 echo    نظام إدارة عيادة الأسنان - التثبيت التلقائي
-echo  ═══════════════════════════════════════════════════════
+echo  ========================================================
 echo.
-echo  سيتم الآن:
-echo    1) فحص وتثبيت Node.js
-echo    2) فحص وتثبيت Ollama
-echo    3) تحميل نماذج الذكاء الاصطناعي (llama3.2, phi3)
-echo    4) تثبيت مكتبات النظام
-echo    5) تشغيل النظام وفتح المتصفح
+echo  1) Node.js
+echo  2) Ollama
+echo  3) llama3.2, phi3
+echo  4) npm
+echo  5) Bridge + Web Server
 echo.
-echo  الرجاء الانتظار... قد يستغرق التثبيت الأول 2-3 دقائق.
+echo  2-3
 echo.
-echo  ─────────────────────────────────────────────────────
+echo  --------------------------------------------------------
 echo.
 
 REM ============================================================
-REM 1) فحص Node.js
+REM 1) Check Node.js
 REM ============================================================
-echo  [1/5] فحص Node.js...
+echo  [1/5] Node.js ...
 where node >nul 2>&1
 if %errorLevel% neq 0 (
-  echo    Node.js غير مثبت. سيتم تحميله وتثبيته تلقائياً...
+  echo    Node.js not found. Downloading and installing...
   echo.
   set "NODE_VER=22.11.0"
   set "NODE_MSI=node-setup.msi"
-  
-  REM تحديد معمارية النظام
+
   if "%PROCESSOR_ARCHITECTURE%"=="AMD64" (
     set "NODE_URL=https://nodejs.org/dist/v!NODE_VER!/node-v!NODE_VER!-x64.msi"
   ) else (
     set "NODE_URL=https://nodejs.org/dist/v!NODE_VER!/node-v!NODE_VER!-x86.msi"
   )
-  
-  echo    تحميل Node.js من الموقع الرسمي...
+
+  echo    Downloading Node.js ...
   powershell -Command "Invoke-WebRequest -Uri '!NODE_URL!' -OutFile '!NODE_MSI!' -UseBasicParsing"
-  
+
   if not exist "!NODE_MSI!" (
-    echo    [X] تعذر تحميل Node.js.
-    echo        حمّله يدوياً من https://nodejs.org ثم أعد تشغيل هذا الملف.
+    echo    [X] Node.js download failed.
+    echo        https://nodejs.org
     pause
     exit /b 1
   )
-  
-  echo    تثبيت Node.js...
+
+  echo    Installing Node.js ...
   msiexec /i "!NODE_MSI!" /quiet /norestart
-  
+
   if exist "!NODE_MSI!" del "!NODE_MSI!"
-  
-  REM تحديث PATH للجلسة الحالية
+
   set "PATH=C:\Program Files\nodejs;%PATH%"
-  
+
   where node >nul 2>&1
   if %errorLevel% neq 0 (
-    echo    [X] فشل تثبيت Node.js. أعد تشغيل الكمبيوتر ثم حاول مجدداً.
+    echo    [X] Node.js installation failed. Restart your computer and try again.
     pause
     exit /b 1
   )
-  echo    [OK] تم تثبيت Node.js بنجاح.
+  echo    [OK] Node.js installed.
 ) else (
   for /f "tokens=*" %%v in ('node -v') do set "NODE_VER=%%v"
-  echo    [OK] Node.js مثبت بالفعل - الإصدار !NODE_VER!
+  echo    [OK] Node.js - !NODE_VER!
 )
 echo.
 
 REM ============================================================
-REM 2) فحص Ollama
+REM 2) Check Ollama
 REM ============================================================
-echo  [2/5] فحص Ollama...
+echo  [2/5] Ollama ...
 where ollama >nul 2>&1
 if %errorLevel% neq 0 (
-  echo    Ollama غير مثبت. سيتم تحميله وتثبيته تلقائياً...
+  echo    Ollama not found. Downloading and installing...
   set "OLLAMA_EXE=ollama-setup.exe"
-  
-  echo    تحميل Ollama...
+
+  echo    Downloading Ollama ...
   powershell -Command "Invoke-WebRequest -Uri 'https://ollama.com/download/OllamaSetup.exe' -OutFile '!OLLAMA_EXE!' -UseBasicParsing"
-  
+
   if not exist "!OLLAMA_EXE!" (
-    echo    [X] تعذر تحميل Ollama.
-    echo        حمّله يدوياً من https://ollama.com ثم أعد تشغيل هذا الملف.
+    echo    [X] Ollama download failed.
+    echo        https://ollama.com
     pause
     exit /b 1
   )
-  
-  echo    تثبيت Ollama...
+
+  echo    Installing Ollama ...
   "!OLLAMA_EXE!" /SILENT
-  
+
   if exist "!OLLAMA_EXE!" del "!OLLAMA_EXE!"
-  
-  REM إضافة Ollama إلى PATH
+
   set "PATH=C:\Users\%USERNAME%\AppData\Local\Programs\Ollama;%PATH%"
-  
+
   timeout /t 5 >nul
-  
+
   where ollama >nul 2>&1
   if %errorLevel% neq 0 (
-    echo    [!] Ollama مثبت لكن يحتاج إعادة تشغيل الكمبيوتر.
-    echo        أعد تشغيل الكمبيوتر ثم شغّل هذا الملف مرة أخرى.
+    echo    [!] Ollama installed. Restart your computer then run this file again.
     pause
     exit /b 1
   )
-  echo    [OK] تم تثبيت Ollama بنجاح.
+  echo    [OK] Ollama installed.
 ) else (
-  echo    [OK] Ollama مثبت بالفعل.
+  echo    [OK] Ollama.
 )
 echo.
 
 REM ============================================================
-REM 3) تشغيل خادم Ollama وتحميل النماذج
+REM 3) Start Ollama server and pull models
 REM ============================================================
-echo  [3/5] تشغيل خادم Ollama وتحميل النماذج...
+echo  [3/5] Ollama server + models ...
 
-REM التحقق من أن خادم Ollama يعمل
 powershell -Command "try { (Invoke-WebRequest -Uri 'http://localhost:11434/api/tags' -UseBasicParsing -TimeoutSec 3).StatusCode } catch { 0 }" >nul 2>&1
 if %errorLevel% neq 200 (
-  echo    تشغيل خادم Ollama في الخلفية...
+  echo    Starting Ollama server ...
   start "" /B ollama serve
   timeout /t 5 >nul
 )
 
-REM تحميل النماذج
 for %%m in (llama3.2 phi3) do (
-  echo    تحميل النموذج: %%m
+  echo    Pulling model: %%m
   ollama pull %%m
-  echo    [OK] تم تحميل %%m
+  echo    [OK] %%m
 )
 echo.
 
 REM ============================================================
-REM 4) تثبيت مكتبات npm
+REM 4) npm install
 REM ============================================================
-echo  [4/5] تثبيت مكتبات النظام (npm install)...
+echo  [4/5] npm install ...
 cd /d "%ROOT%"
 call npm install --silent 2>nul
 if %errorLevel% neq 0 (
-  echo    [!] حدث خطأ بسيط أثناء تثبيت بعض المكتبات، سيتم المتابعة...
+  echo    [!] Minor npm warning, continuing...
 )
-echo    [OK] تم تثبيت المكتبات.
+echo    [OK] npm packages installed.
 echo.
 
 REM ============================================================
-REM 5) تشغيل الجسر + النظام
+REM 5) Run bridge + web server
 REM ============================================================
-echo  [5/5] تشغيل النظام...
+echo  [5/5] Starting system ...
 echo.
-echo  ─────────────────────────────────────────────────────
+echo  --------------------------------------------------------
 echo.
 
-REM تشغيل الجسر في نافذة منفصلة
-start "جسر Ollama المحلي" cmd /k "cd /d "%ROOT%" && node local-ollama-bridge.js"
+start "Ollama Bridge" cmd /k "cd /d "%ROOT%" && node local-ollama-bridge.js"
 
-REM انتظار قصير لبدء الجسر
 timeout /t 3 >nul
 
-REM تشغيل خادم الويب في الخلفية
 start "" /B cmd /c "cd /d "%ROOT%" && npm run dev -- --host 0.0.0.0 --port 5173"
 
-REM انتظار بدء الخادم ثم فتح المتصفح
-echo  جاري تشغيل النظام... الرجاء الانتظار.
+echo  Starting ... please wait.
 timeout /t 8 >nul
 
 echo.
-echo  ═══════════════════════════════════════════════════════
-echo    النظام جاهز! سيتم فتح المتصفح تلقائياً...
-echo  ═══════════════════════════════════════════════════════
+echo  ========================================================
+echo    System is ready! Opening browser...
+echo  ========================================================
 echo.
 
-REM فتح المتصفح على النظام
 start "" "http://localhost:5173"
 
-echo  النظام يعمل الآن على:
+echo  System is running at:
 echo    http://localhost:5173
 echo.
-echo  لإيقاف النظام: أغلق نافذة "جسر Ollama المحلي"
-echo  ولإعادة التشغيل: شغّل هذا الملف مرة أخرى.
+echo  Close the "Ollama Bridge" window to stop.
+echo  Run this file again to restart.
 echo.
-echo  اترك هذه النافذة مفتوحة أثناء استخدام النظام.
+echo  Keep this window open while using the system.
 echo.
 pause

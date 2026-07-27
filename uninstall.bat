@@ -1,75 +1,80 @@
+@chcp 65001 >nul
 @echo off
-chcp 65001 >nul 2>&1
-title إزالة النظام - نظام إدارة عيادة الأسنان
+title Uninstall - Dental Clinic System
 mode con: cols=70 lines=22
 color 0C
+
+REM ============================================================
+REM  Dental Clinic System - Uninstall Utility
+REM  Stops processes and removes project files and local data
+REM  Does NOT remove Node.js or Ollama (may be used by others)
+REM ============================================================
 
 set "ROOT=%~dp0"
 cd /d "%ROOT%"
 
 echo.
-echo  ═══════════════════════════════════════════
+echo  ========================================================
 echo    إزالة نظام إدارة عيادة الأسنان
-echo  ═══════════════════════════════════════════
+echo  ========================================================
 echo.
-echo  هذا الملف سيقوم بإزالة النظام من جهازك.
+echo  This will remove the system from your computer.
 echo.
-echo  تحذير: سيتم حذف جميع ملفات النظام والبيانات المحلية.
-echo  ينصح بإنشاء نسخة احتياطية قبل المتابعة (backup.bat).
+echo  WARNING: All system files and local data will be deleted.
+echo  It is recommended to run backup.bat first.
 echo.
-echo  ملاحظة: لن يتم إزالة Node.js أو Ollama لأنهما قد
-echo  يكونان مفيدَين لبرامج أخرى على جهازك.
+echo  Note: Node.js and Ollama will NOT be removed.
 echo.
-echo  ─────────────────────────────────────────────
+echo  --------------------------------------------------------
 echo.
-set /p CONFIRM="هل أنت متأكد؟ (نعم/لا): "
+set /p CONFIRM="Are you sure? (yes/no): "
 
-if /i not "%CONFIRM%"=="نعم" (
+if /i not "%CONFIRM%"=="yes" (
   echo.
-  echo  تم إلغاء العملية. لم يتم حذف أي شيء.
+  echo  Cancelled. Nothing was deleted.
   pause
   exit /b
 )
 
 echo.
-echo  جاري الإزالة...
+echo  Removing ...
 
-REM إيقاف العمليات الجارية
+REM Stop running processes
 taskkill /f /im node.exe 2>nul
 taskkill /f /im ollama.exe 2>nul
 
 timeout /t 2 >nul
 
-REM حذف مجلد node_modules
+REM Remove node_modules
 if exist "%ROOT%node_modules" (
   rmdir /s /q "%ROOT%node_modules"
-  echo  [OK] تم حذف مكتبات npm.
+  echo  [OK] Removed npm packages.
 )
 
-REM حذف مجلد dist
+REM Remove dist
 if exist "%ROOT%dist" (
   rmdir /s /q "%ROOT%dist"
-  echo  [OK] تم حذف ملفات الإنتاج.
+  echo  [OK] Removed build files.
 )
 
-REM حذف البيانات المحلية
+REM Remove local data
 if exist "%ROOT%data" (
   rmdir /s /q "%ROOT%data"
-  echo  [OK] تم حذف قاعدة البيانات المحلية.
+  echo  [OK] Removed local database.
 )
 
-REM حذف النسخ الاحتياطية
+REM Remove backups
 if exist "%ROOT%Backups" (
   rmdir /s /q "%ROOT%Backups"
-  echo  [OK] تم حذف النسخ الاحتياطية.
+  echo  [OK] Removed backups.
 )
 
 echo.
-echo  ═══════════════════════════════════════════
-echo    تمت إزالة النظام بنجاح.
-echo  ═══════════════════════════════════════════
+echo  ========================================================
+echo    System removed successfully.
+echo  ========================================================
 echo.
-echo  لإزالة Node.js: لوحة التحكم ← البرامج ← إزالة Node.js
-echo  لإزالة Ollama: لوحة التحكم ← البرامج ← إزالة Ollama
+echo  To remove Node.js: Control Panel - Programs - Uninstall Node.js
+echo  To remove Ollama: Control Panel - Programs - Uninstall Ollama
 echo.
 pause

@@ -1,8 +1,14 @@
+@chcp 65001 >nul
 @echo off
-chcp 65001 >nul 2>&1
-title النسخ الاحتياطي - نظام إدارة عيادة الأسنان
+title Backup - Dental Clinic System
 mode con: cols=70 lines=20
 color 0B
+
+REM ============================================================
+REM  Dental Clinic System - Backup Utility
+REM  Copies data, config, and local DB files to Backups folder
+REM  Keeps the most recent 30 backup copies
+REM ============================================================
 
 set "ROOT=%~dp0"
 cd /d "%ROOT%"
@@ -13,40 +19,41 @@ set "TIMESTAMP=%TIMESTAMP: =0%"
 set "BACKUP_PATH=%BACKUP_DIR%\backup_%TIMESTAMP%"
 
 echo.
-echo  ═══════════════════════════════════════════
+echo  ========================================================
 echo    النسخ الاحتياطي - نظام إدارة عيادة الأسنان
-echo  ═══════════════════════════════════════════
+echo  ========================================================
 echo.
 
 if not exist "%BACKUP_DIR%" (
   mkdir "%BACKUP_DIR%"
-  echo  تم إنشاء مجلد النسخ الاحتياطية.
+  echo  Created backup folder.
 )
 
-echo  جاري إنشاء نسخة احتياطية...
-echo  المسار: %BACKUP_PATH%
+echo  Creating backup ...
+echo  Path: %BACKUP_PATH%
 echo.
 
 mkdir "%BACKUP_PATH%" 2>nul
 
-REM نسخ ملفات البيانات والإعدادات
+REM Copy data and config files
 if exist "%ROOT%config.json" copy "%ROOT%config.json" "%BACKUP_PATH%\" >nul
 if exist "%ROOT%.env" copy "%ROOT%.env" "%BACKUP_PATH%\" >nul
 if exist "%ROOT%package.json" copy "%ROOT%package.json" "%BACKUP_PATH%\" >nul
 
-REM نسخ قاعدة البيانات المحلية إن وُجدت
+REM Copy local database if present
 if exist "%ROOT%data" xcopy "%ROOT%data" "%BACKUP_PATH%\data\" /E /I /Y >nul
 if exist "%ROOT%*.db" copy "%ROOT%*.db" "%BACKUP_PATH%\" >nul
 if exist "%ROOT%*.sqlite" copy "%ROOT%*.sqlite" "%BACKUP_PATH%\" >nul
 
-REM نسخ نماذج Ollama المحفوظة محلياً (إن وُجدت في مجلد المشروع)
+REM Copy local Ollama models if present in project folder
 if exist "%ROOT%models" xcopy "%ROOT%models" "%BACKUP_PATH%\models\" /E /I /Y >nul
 
-echo  [OK] تم إنشاء النسخة الاحتياطية بنجاح.
-echo  المسار: %BACKUP_PATH%
+echo  [OK] Backup created successfully.
+echo  Path: %BACKUP_PATH%
 echo.
 
-REM الاحتفاظ بآخر 30 نسخة فقط
+REM Keep only the latest 30 backups
+setlocal enabledelayedexpansion
 set "COUNT=0"
 for /f "delims=" %%d in ('dir /b /ad /o-n "%BACKUP_DIR%\backup_*" 2^>nul') do (
   set /a COUNT+=1
@@ -54,8 +61,9 @@ for /f "delims=" %%d in ('dir /b /ad /o-n "%BACKUP_DIR%\backup_*" 2^>nul') do (
     rmdir /s /q "%BACKUP_DIR%\%%d" 2>nul
   )
 )
+endlocal
 
-echo  يتم الاحتفاظ بآخر 30 نسخة احتياطية فقط.
+echo  Keeping the latest 30 backups only.
 echo.
-echo  اضغط أي مفتاح للخروج...
+echo  Press any key to exit ...
 pause >nul
