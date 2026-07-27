@@ -35,7 +35,24 @@ const OLLAMA_HOST = process.env.OLLAMA_HOST || config.ollama.host || 'http://loc
 const SYSTEM_PROMPT = config.ai.system_prompt;
 
 const app = express();
-app.use(cors());
+
+// CORS — نسمح للنظام المنشور على Vercel والجهاز المحلي بالاتصال بالجسر
+const ALLOWED_ORIGINS = [
+  'https://ava-dent-pro-ai.vercel.app',
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+];
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(null, true); // اسمح للجميع حالياً لتسهيل التجربة — يمكن تقييده لاحقاً
+    }
+  },
+}));
 app.use(express.json({ limit: '1mb' }));
 
 let tunnelUrl = null; // عنوان النفق العام (HTTPS)

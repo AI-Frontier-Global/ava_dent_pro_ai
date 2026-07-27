@@ -4,6 +4,34 @@
 
 ---
 
+## طرق تسجيل الدخول المدعومة
+
+يدعم النظام طريقتين لتسجيل الدخول وإنشاء الحساب، وكلتاهما تمنح وصولاً كاملاً لجميع الميزات بما فيها الذكاء الاصطناعي:
+
+1. **البريد الإلكتروني وكلمة المرور** — الطريقة الأساسية والظاهرة افتراضياً.
+2. **حساب Google** — خيار ثانوي أسفل النموذج في صفحتي تسجيل الدخول وإنشاء الحساب.
+
+كلا الطريقتين تستخدمان دالة `getRedirectTo()` الموحّدة لإعادة التوجيه إلى الرابط الصحيح بعد المصادقة (`VITE_APP_URL` أو `window.location.origin`).
+
+### إعداد Google OAuth
+1. في Google Cloud Console، أنشئ OAuth 2.0 credentials وأضف:
+   - **Authorized redirect URI**: `https://vbqgumaijivsseeqaiud.supabase.co/auth/v1/callback`
+2. في Supabase → Authentication → Providers → Google، فعّل الموفر والصق Client ID و Client Secret.
+3. في Supabase → Authentication → URL Configuration، أضف `https://ava-dent-pro-ai.vercel.app` إلى **Redirect URLs**.
+
+---
+
+## الذكاء الاصطناعي — يعمل في كلا المسارين
+
+الذكاء الاصطناعي (السحابي والمحلي) متاح لكل المستخدمين بغض النظر عن طريقة تسجيل الدخول:
+
+- **السحابي**: OpenAI، Anthropic، Google Gemini — أدخل مفاتيح API من "مركز الذكاء الاصطناعي" داخل النظام.
+- **المحلي**: Ollama Bridge — يُشغّل على جهاز المستخدم ويتصل بالنظام عبر CORS.
+
+الجسر المحلي مُعد للسماح بالاتصال من `https://ava-dent-pro-ai.vercel.app` تلقائياً.
+
+---
+
 ## الخطوة 1: إنشاء قاعدة البيانات (Supabase)
 
 المشروع لديك على Supabase جاهز مسبقاً. كل ما تحتاجه هو نسخ المفاتيح.

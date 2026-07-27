@@ -132,6 +132,7 @@ function App() {
         onSuccess={handleLogin}
         selectedPlan={selectedPlan}
         signIn={signIn}
+        signInWithGoogle={signInWithGoogle}
       />
     );
   }
