@@ -19,6 +19,17 @@ export interface ChatTurn {
   content: string;
 }
 
+// اكتشاف البيئة: عند التشغيل محلياً (localhost/127.0.0.1) نستخدم proxy Vite
+// لتجاوز قيود CORS و mixed-content. عند التشغيل على bolt.host نستخدم localhost مباشرة.
+function resolveBridgeUrl(bridgeUrl: string): string {
+  const href = typeof window !== 'undefined' ? window.location.hostname : '';
+  const isLocal = href === 'localhost' || href === '127.0.0.1' || href === '0.0.0.0';
+  if (isLocal) {
+    return '/bridge-api'; // يُعاد توجيهه عبر Vite proxy إلى http://localhost:3001/api
+  }
+  return normalize(bridgeUrl);
+}
+
 function normalize(url: string): string {
   return (url || '').replace(/\/$/, '');
 }
@@ -37,7 +48,7 @@ async function safeFetch(url: string, init?: RequestInit, timeoutMs = 8000): Pro
 }
 
 export async function getStatus(bridgeUrl: string): Promise<BridgeStatus | null> {
-  const res = await safeFetch(`${normalize(bridgeUrl)}/api/status`);
+  const res = await safeFetch(`${resolveBridgeUrl(bridgeUrl)}/api/status`);
   if (!res || !res.ok) return null;
   try {
     const data = await res.json();
@@ -53,7 +64,7 @@ export async function getStatus(bridgeUrl: string): Promise<BridgeStatus | null>
 }
 
 export async function getModels(bridgeUrl: string): Promise<BridgeModel[] | null> {
-  const res = await safeFetch(`${normalize(bridgeUrl)}/api/models`);
+  const res = await safeFetch(`${resolveBridgeUrl(bridgeUrl)}/api/models`);
   if (!res) return null;
   if (!res.ok) return [];
   try {
@@ -65,7 +76,7 @@ export async function getModels(bridgeUrl: string): Promise<BridgeModel[] | null
 }
 
 export async function deleteModel(bridgeUrl: string, name: string): Promise<boolean> {
-  const res = await safeFetch(`${normalize(bridgeUrl)}/api/models/${encodeURIComponent(name)}`, {
+  const res = await safeFetch(`${resolveBridgeUrl(bridgeUrl)}/api/models/${encodeURIComponent(name)}`, {
     method: 'DELETE',
   }, 15000);
   return !!res && res.ok;
@@ -78,7 +89,7 @@ export async function chat(
   model?: string,
 ): Promise<string | null> {
   const res = await safeFetch(
-    `${normalize(bridgeUrl)}/api/chat`,
+    `${resolveBridgeUrl(bridgeUrl)}/api/chat`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -96,12 +107,12 @@ export async function chat(
 }
 
 export async function startService(bridgeUrl: string): Promise<boolean> {
-  const res = await safeFetch(`${normalize(bridgeUrl)}/api/service/start`, { method: 'POST' }, 10000);
+  const res = await safeFetch(`${resolveBridgeUrl(bridgeUrl)}/api/service/start`, { method: 'POST' }, 10000);
   return !!res && res.ok;
 }
 
 export async function stopService(bridgeUrl: string): Promise<boolean> {
-  const res = await safeFetch(`${normalize(bridgeUrl)}/api/service/stop`, { method: 'POST' }, 10000);
+  const res = await safeFetch(`${resolveBridgeUrl(bridgeUrl)}/api/service/stop`, { method: 'POST' }, 10000);
   return !!res && res.ok;
 }
 
@@ -113,7 +124,7 @@ export async function pullModel(
   signal?: AbortSignal,
 ): Promise<boolean> {
   try {
-    const res = await fetch(`${normalize(bridgeUrl)}/api/pull`, {
+    const res = await fetch(`${resolveBridgeUrl(bridgeUrl)}/api/pull`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ model }),

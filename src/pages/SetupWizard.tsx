@@ -129,6 +129,17 @@ export default function SetupWizard({ onComplete }: Props) {
             {step === 'check' && (
               <div className="space-y-4">
                 <h3 className="text-lg font-bold text-slate-800">فحص الخدمات</h3>
+
+                <div className="rounded-xl border border-warning-200 bg-warning-50 p-3 text-xs text-warning-800">
+                  <p className="font-bold mb-1">ملاحظة مهمة حول التشغيل</p>
+                  <p>
+                    المتصفحات تمنع الاتصال بالشبكة المحلية (localhost) من موقع bolt.host لأسباب أمنية.
+                    لتشغيل المساعد الذكي المحلي بدون قيود، شغّل النظام على جهازك مباشرة باستخدام ملف{' '}
+                    <code className="rounded bg-warning-100 px-1.5 py-0.5">start-local.bat</code> ثم افتح{' '}
+                    <code className="rounded bg-warning-100 px-1.5 py-0.5">http://localhost:5173</code>.
+                  </p>
+                </div>
+
                 <div className="space-y-3">
                   <CheckRow icon={Terminal} label="Node.js" checking={checking} ok={checks?.nodeInstalled} />
                   <CheckRow icon={Cpu} label="Ollama" checking={checking} ok={checks?.ollamaInstalled} />
