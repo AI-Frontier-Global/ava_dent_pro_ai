@@ -10,7 +10,7 @@ echo.
 
 REM --- 1) تشغيل جسر Ollama على المنفذ 3001 ---
 echo  [1/2] تشغيل جسر Ollama المحلي (المنفذ 3001)...
-start "جسر Ollama" cmd /k "node local-ollama-bridge.js"
+start "جسر Ollama" cmd /k "npm install express cors localtunnel --silent 2>nul && node local-ollama-bridge.js"
 
 REM --- 2) تشغيل واجهة النظام على المنفذ 5173 ---
 echo  [2/2] تشغيل واجهة النظام (المنفذ 5173)...

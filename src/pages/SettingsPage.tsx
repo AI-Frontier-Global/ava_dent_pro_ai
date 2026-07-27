@@ -113,7 +113,7 @@ export function AISettingsPanel() {
   const [whatsappEnabled, setWhatsappEnabled] = useState(true);
 
   // حالة الجسر
-  const [status, setStatus] = useState<{ bridge: 'online' | 'offline'; ollama: boolean } | null>(null);
+  const [status, setStatus] = useState<{ bridge: 'online' | 'offline'; ollama: boolean; tunnelUrl?: string | null } | null>(null);
   const [statusLoading, setStatusLoading] = useState(false);
 
   // النماذج
@@ -170,7 +170,7 @@ export function AISettingsPanel() {
   async function refreshStatus() {
     setStatusLoading(true);
     const s = await getStatus(bridgeUrl);
-    setStatus(s ? { bridge: s.bridge, ollama: s.ollama } : { bridge: 'offline', ollama: false });
+    setStatus(s ? { bridge: s.bridge, ollama: s.ollama, tunnelUrl: s.tunnelUrl } : { bridge: 'offline', ollama: false });
     setStatusLoading(false);
     if (s && s.bridge === 'online') refreshModels();
   }
@@ -492,6 +492,32 @@ export function AISettingsPanel() {
           <div className="mt-3 flex items-start gap-2 rounded-md bg-warning-50 border border-warning-200 p-3 text-xs text-warning-800">
             <AlertCircle size={16} className="mt-0.5 shrink-0" />
             <span>الجسر المحلي غير متصل. شغّل <span dir="ltr" className="font-mono">node bridge.js</span> على كمبيوتر العيادة، ثم اضغط "تحديث الحالة".</span>
+          </div>
+        )}
+
+        {bridgeOnline && status?.tunnelUrl && (
+          <div className="mt-3 flex items-start gap-2 rounded-md bg-sky-50 border border-sky-200 p-3 text-xs text-sky-800">
+            <Globe size={16} className="mt-0.5 shrink-0" />
+            <div className="flex-1">
+              <p className="font-semibold mb-1">نفق عام HTTPS نشط — يعمل من أي مكان!</p>
+              <p className="mb-2">عنوان النفق: <code dir="ltr" className="font-mono bg-sky-100 px-1.5 py-0.5 rounded">{status.tunnelUrl}</code></p>
+              <button
+                onClick={() => {
+                  setSettings((s) => (s ? { ...s, bridge_url: status.tunnelUrl! } : s));
+                  toast('تم تعيين عنوان النفق كعنوان الجسر — احفظ الإعدادات', 'success');
+                }}
+                className="rounded-md bg-sky-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-sky-700"
+              >
+                استخدم عنوان النفق
+              </button>
+            </div>
+          </div>
+        )}
+
+        {bridgeOnline && !status?.tunnelUrl && (
+          <div className="mt-3 flex items-start gap-2 rounded-md bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800">
+            <AlertCircle size={16} className="mt-0.5 shrink-0" />
+            <span>الجسر متصل محلياً فقط. للوصول من خارج العيادة (من bolt.host أو أي جهاز)، شغّل الجسر وسيتنشأ نفق HTTPS تلقائياً. تأكد من تثبيت <span dir="ltr" className="font-mono">localtunnel</span>.</span>
           </div>
         )}
       </section>

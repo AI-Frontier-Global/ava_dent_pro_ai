@@ -23,12 +23,15 @@ const http = require('http');
 
 const BRIDGE_PORT = process.env.BRIDGE_PORT || 3001;
 const OLLAMA_HOST = process.env.OLLAMA_HOST || 'http://localhost:11434';
+const TUNNEL_PORT = process.env.TUNNEL_PORT || 0; // 0 = منفذ عشوائي
 const SYSTEM_PROMPT =
   'أنت مساعد طبي متخصص في إدارة عيادات الأسنان في الأردن، تجيب باختصار ووضوح.';
 
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '1mb' }));
+
+let tunnelUrl = null; // عنوان النفق العام (HTTPS)
 
 // أدوات مساعدة
 // ============
@@ -85,6 +88,7 @@ app.get('/api/status', async (_req, res) => {
     ollama: status.running,
     ollamaHost: OLLAMA_HOST,
     systemPrompt: SYSTEM_PROMPT,
+    tunnelUrl,
   });
 });
 
@@ -248,10 +252,55 @@ app.post('/api/service/stop', (_req, res) => {
   res.json({ running: false, message: 'الخدمة غير مشغّلة' });
 });
 
-app.listen(BRIDGE_PORT, () => {
+// نفق عام HTTPS عبر localtunnel — يسمح للموقع المنشور (bolt.host) بالوصول للجسر
+async function startTunnel(port) {
+  try {
+    const localtunnel = await import('localtunnel');
+    const tunnel = localtunnel.default({ port, subdomain: process.env.TUNNEL_SUBDOMAIN || undefined });
+    tunnel.on('request', (info) => {
+      console.log(`  [نفق] طلب جديد: ${info.method} ${info.path}`);
+    });
+    tunnel.on('error', (err) => {
+      console.error('  [نفق] خطأ:', err.message);
+    });
+    return new Promise((resolve, reject) => {
+      tunnel.on('url', (url) => {
+        console.log(`  ✅ نفق عام HTTPS نشط على:`);
+        console.log(`     ${url}`);
+        resolve(url);
+      });
+      tunnel.on('error', reject);
+      setTimeout(() => reject(new Error('انتهت مهلة إنشاء النفق')), 15000);
+    });
+  } catch (err) {
+    console.error('  ⚠️  تعذر إنشاء النفق العام:', err.message);
+    console.error('     يمكنك تثبيت localtunnel يدوياً: npm install -g localtunnel');
+    return null;
+  }
+}
+
+app.get('/api/tunnel', (_req, res) => {
+  res.json({ url: tunnelUrl, active: !!tunnelUrl });
+});
+
+app.listen(BRIDGE_PORT, async () => {
   console.log(`\n  ✅ جسر Ollama المحلي يعمل على:`);
   console.log(`     http://localhost:${BRIDGE_PORT}`);
   console.log(`  ✅ خادم Ollama المستهدف:`);
   console.log(`     ${OLLAMA_HOST}`);
+
+  // إنشاء نفق عام تلقائياً (إلا إذا تم تعطيله)
+  if (process.env.NO_TUNNEL !== '1') {
+    try {
+      tunnelUrl = await startTunnel(BRIDGE_PORT);
+      if (tunnelUrl) {
+        console.log(`\n  🌐 عنوان النفق العام (انسخه في إعدادات الموقع):`);
+        console.log(`     ${tunnelUrl}`);
+      }
+    } catch (err) {
+      console.error('  ⚠️  النفق العام غير متاح:', err.message);
+    }
+  }
+
   console.log(`\n  اترك هذه النافذة مفتوحة أثناء استخدام النظام.\n`);
 });

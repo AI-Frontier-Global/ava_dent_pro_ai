@@ -12,6 +12,7 @@ export interface BridgeStatus {
   ollama: boolean;
   ollamaHost?: string;
   systemPrompt?: string;
+  tunnelUrl?: string | null;
 }
 
 export interface ChatTurn {
@@ -57,6 +58,7 @@ export async function getStatus(bridgeUrl: string): Promise<BridgeStatus | null>
       ollama: !!data.ollama,
       ollamaHost: data.ollamaHost,
       systemPrompt: data.systemPrompt,
+      tunnelUrl: data.tunnelUrl ?? null,
     };
   } catch {
     return null;

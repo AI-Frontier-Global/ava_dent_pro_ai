@@ -92,9 +92,9 @@ if %ERRORLEVEL% NEQ 0 (
 
 REM ------ تثبيت حزم npm ------
 echo.
-echo [3/4] تثبيت الحزم المطلوبة (express, cors)...
+echo [3/4] تثبيت الحزم المطلوبة (express, cors, localtunnel)...
 cd /d "%BRIDGE_DIR%"
-call npm install express cors --silent 2>nul
+call npm install express cors localtunnel --silent 2>nul
 if %ERRORLEVEL% NEQ 0 (
     echo         [WARNING] قد تحتاج لتشغيل npm install يدوياً.
 ) else (
