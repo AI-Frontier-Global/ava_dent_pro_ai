@@ -16,7 +16,6 @@ import {
 import {
   checkBridgeStatus,
   downloadBridgeFiles,
-  launchBridge,
   runSetupChecks,
   markSetupComplete,
   type SetupCheck,
@@ -35,6 +34,7 @@ export default function SetupWizard({ onComplete }: Props) {
   const [checking, setChecking] = useState(true);
   const [downloading, setDownloading] = useState(false);
   const [launching, setLaunching] = useState(false);
+  const [polling, setPolling] = useState(false);
   const toast = useToast();
 
   const runChecks = useCallback(async () => {
@@ -59,21 +59,27 @@ export default function SetupWizard({ onComplete }: Props) {
     if (result.success) setStep('launch');
   };
 
+  // استطلاع دوري للجسر — كل 3 ثوانٍ، لمدة أقصاها 60 ثانية
   const handleLaunch = async () => {
     setLaunching(true);
-    launchBridge();
-    // انتظر ثم افحص الاتصال
-    setTimeout(async () => {
-      const result = await checkBridgeStatus();
-      setLaunching(false);
+    setPolling(true);
+    toast('افتح CMD ونفّذ: node local-ollama-bridge.js — سنتحقق من الاتصال تلقائياً', 'success');
+    const maxAttempts = 20;
+    for (let i = 0; i < maxAttempts; i++) {
+      await new Promise((r) => setTimeout(r, 3000));
+      const result = await checkBridgeStatus('http://localhost:3001');
       if (result.state === 'online') {
         toast('الجسر متصل بنجاح!', 'success');
         markSetupComplete();
         setStep('done');
-      } else {
-        toast('الجسر لا يزال غير متصل — تأكد من تشغيله في نافذة CMD', 'error');
+        setLaunching(false);
+        setPolling(false);
+        return;
       }
-    }, 5000);
+    }
+    setLaunching(false);
+    setPolling(false);
+    toast('لم نتمكن من الاتصال بالجسر بعد 60 ثانية. تأكد من تشغيله في CMD ثم اضغط "إعادة الفحص"', 'error');
   };
 
   const handleFinish = () => {
@@ -89,14 +95,23 @@ export default function SetupWizard({ onComplete }: Props) {
         <div className="card overflow-hidden">
           {/* Header */}
           <div className="border-b border-slate-100 bg-gradient-to-l from-slate-700 to-slate-900 p-6 text-white">
-            <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10">
-                <Sparkles size={24} />
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10">
+                  <Sparkles size={24} />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold">التثبيت الأولي للذكاء الاصطناعي</h2>
+                  <p className="text-sm text-slate-300">إعداد الجسر المحلي للذكاء الاصطناعي — خطوة واحدة فقط</p>
+                </div>
               </div>
-              <div>
-                <h2 className="text-xl font-bold">التثبيت الأولي للذكاء الاصطناعي</h2>
-                <p className="text-sm text-slate-300">إعداد الجسر المحلي للذكاء الاصطناعي — خطوة واحدة فقط</p>
-              </div>
+              <button
+                onClick={handleFinish}
+                className="shrink-0 rounded-lg border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white/90 transition-colors hover:bg-white/20"
+                title="يمكنك إكمال الإعداد لاحقاً من الإعدادات"
+              >
+                تخطي الآن
+              </button>
             </div>
           </div>
 
@@ -222,6 +237,13 @@ export default function SetupWizard({ onComplete }: Props) {
                     <li>3. اترك النافذة مفتوحة أثناء استخدام النظام</li>
                   </ol>
                 </div>
+
+                {polling && (
+                  <div className="flex items-center gap-2 rounded-xl bg-sky-50 px-4 py-3 text-sm text-sky-700">
+                    <Loader2 size={16} className="animate-spin" />
+                    نتحقق من الاتصال بالجسر كل 3 ثوانٍ... اترك نافذة CMD مفتوحة
+                  </div>
+                )}
 
                 <button
                   onClick={handleLaunch}

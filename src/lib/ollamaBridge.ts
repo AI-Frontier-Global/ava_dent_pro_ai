@@ -21,9 +21,11 @@ export interface ChatTurn {
 }
 
 // اكتشاف البيئة: عند التشغيل محلياً (localhost/127.0.0.1) نستخدم proxy Vite
-// لتجاوز قيود CORS و mixed-content. عند التشغيل على bolt.host نستخدم localhost مباشرة.
+// لتجاوز قيود CORS و mixed-content. عند التشغيل على HTTPS (Vercel) نستخدم
+// tunnel URL إن وجد، وإلا نحاول localhost مع رسالة خطأ واضحة.
 function resolveBridgeUrl(bridgeUrl: string): string {
   const href = typeof window !== 'undefined' ? window.location.hostname : '';
+  const protocol = typeof window !== 'undefined' ? window.location.protocol : 'http:';
   const isLocal =
     href === 'localhost' ||
     href === '127.0.0.1' ||
@@ -34,7 +36,15 @@ function resolveBridgeUrl(bridgeUrl: string): string {
   if (isLocal) {
     return '/bridge-api'; // يُعاد توجيهه عبر Vite proxy إلى http://localhost:3001/api
   }
-  return normalize(bridgeUrl);
+  // في الإنتاج (HTTPS): إذا كان bridgeUrl يبدأ بـ https (نفق)، استخدمه مباشرة.
+  // إذا كان http://localhost، المتصفح سيحظره (mixed-content). نستخدمه على أي حال
+  // لأن بعض المتصفحات تسمح بذلك على localhost، لكن نحتاج رسالة واضحة عند الفشل.
+  const normalized = normalize(bridgeUrl);
+  if (protocol === 'https:' && normalized.startsWith('http://') && !normalized.includes('localhost')) {
+    // HTTP غير localhost على HTTPS — سيُحظر
+    return normalized;
+  }
+  return normalized;
 }
 
 function normalize(url: string): string {

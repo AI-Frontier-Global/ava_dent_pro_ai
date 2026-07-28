@@ -66,14 +66,10 @@ function triggerDownload(blob: Blob, filename: string): void {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-// فتح نافذة CMD وتشغيل الجسر — يستخدم protocol handler مخصص.
-// ملاحظة: المتصفح لا يمكنه تشغيل عمليات مباشرة، لذا نفتح رابطاً يشرح الخطوات.
+// launchBridge لم يعد يفتح نافذة خارجية — التعليمات تظهر داخل SetupWizard مباشرة.
+// هذه الدالة محفوظة للتوافق مع الكود القديم لكنها لا تفعل شيئاً يخرج المستخدم من الصفحة.
 export function launchBridge(): void {
-  // نفتح نافذة بتعليمات التشغيل لأن المتصفح لا يستطيع تشغيل CMD مباشرة
-  const instructions = encodeURIComponent(
-    'لتشغيل الجسر:\n1. افتح موجه الأوامر (CMD)\n2. انتقل لمجلد التنزيلات\n3. نفّذ: node local-ollama-bridge.js',
-  );
-  window.open(`data:text/plain;charset=utf-8,${instructions}`, '_blank');
+  // لا شيء — التعليمات معروضة داخل الواجهة. المستخدم يفتح CMD يدوياً.
 }
 
 // إعادة الاتصال التلقائي كل 30 ثانية عند الانقطاع
