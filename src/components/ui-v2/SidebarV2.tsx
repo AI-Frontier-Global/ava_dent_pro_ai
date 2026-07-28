@@ -14,31 +14,13 @@ import {
   Stethoscope,
   Settings,
   LogOut,
-  Brain,
   Sparkles,
   BarChart3,
   Cpu,
   Layers,
+  Brain,
 } from 'lucide-react';
-
-export type Page =
-  | 'dashboard'
-  | 'scheduling'
-  | 'patient-engagement'
-  | 'patient-intake'
-  | 'imaging'
-  | 'treatment'
-  | 'insurance'
-  | 'membership'
-  | 'billing'
-  | 'payments'
-  | 'reports'
-  | 'ai-assistant'
-  | 'ai-hub'
-  | 'ai-center'
-  | 'technology'
-  | 'settings'
-  | 'ai-platform';
+import type { Page } from '@/components/Sidebar';
 
 type NavItem = {
   id: Page;
@@ -91,7 +73,7 @@ type Props = {
   onSignOut?: () => void;
 };
 
-export default function Sidebar({ current, onNavigate, mobileOpen, onCloseMobile, onSignOut }: Props) {
+export default function SidebarV2({ current, onNavigate, mobileOpen, onCloseMobile, onSignOut }: Props) {
   const [collapsed, setCollapsed] = useState(false);
 
   return (
@@ -104,14 +86,15 @@ export default function Sidebar({ current, onNavigate, mobileOpen, onCloseMobile
       )}
 
       <aside
-        className={`fixed inset-y-0 right-0 z-nav flex flex-col bg-slate-900 transition-all duration-lg ease-smooth lg:static ${
+        className={`fixed inset-y-0 right-0 z-nav flex flex-col bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 transition-all duration-lg ease-smooth lg:static ${
           collapsed ? 'w-[76px]' : 'w-[260px]'
         } ${mobileOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'}`}
+        dir="rtl"
       >
-        {/* Brand — M3 headline style */}
+        {/* Brand */}
         <div className="flex h-[68px] shrink-0 items-center justify-between gap-3 border-b border-white/5 px-5">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-brand-500 text-white shadow-brand-glow">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-brand-400 to-accent-600 text-white shadow-lg shadow-brand-500/30">
               <Stethoscope size={20} />
             </div>
             {!collapsed && (
@@ -130,7 +113,7 @@ export default function Sidebar({ current, onNavigate, mobileOpen, onCloseMobile
           </button>
         </div>
 
-        {/* Nav — M3 Navigation Drawer with state layers */}
+        {/* Nav */}
         <nav className="flex-1 overflow-y-auto px-3 py-4">
           {sections.map((section) => (
             <div key={section.title} className="mb-5">
@@ -151,10 +134,15 @@ export default function Sidebar({ current, onNavigate, mobileOpen, onCloseMobile
                         onCloseMobile();
                       }}
                       title={collapsed ? item.label : undefined}
-                      className={`nav-link-dark ${active ? 'nav-link-dark-active' : 'nav-link-dark-idle'} ${
-                        collapsed ? 'justify-center' : ''
-                      }`}
+                      className={`group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 transition-all duration-sm ${
+                        active
+                          ? 'bg-gradient-to-l from-brand-500/20 to-accent-500/10 text-white'
+                          : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
+                      } ${collapsed ? 'justify-center' : ''}`}
                     >
+                      {active && (
+                        <span className="absolute right-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-full bg-gradient-to-b from-brand-400 to-accent-500" />
+                      )}
                       <Icon
                         size={18}
                         className={active ? 'text-brand-400' : 'text-slate-500 group-hover:text-slate-300'}
@@ -181,7 +169,7 @@ export default function Sidebar({ current, onNavigate, mobileOpen, onCloseMobile
           ))}
         </nav>
 
-        {/* Bottom actions — M3 list item style */}
+        {/* Bottom */}
         <div className="shrink-0 border-t border-white/5 p-3">
           <button
             onClick={() => {
@@ -189,14 +177,15 @@ export default function Sidebar({ current, onNavigate, mobileOpen, onCloseMobile
               onCloseMobile();
             }}
             title={collapsed ? 'الإعدادات' : undefined}
-            className={`nav-link-dark nav-link-dark-idle ${collapsed ? 'justify-center' : ''}`}
+            className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-slate-400 transition-all hover:bg-white/5 hover:text-slate-200 ${
+              collapsed ? 'justify-center' : ''
+            }`}
           >
             <Settings size={18} />
             {!collapsed && <span className="text-sm font-medium">الإعدادات</span>}
           </button>
 
-          {/* User card — Fluent persona card */}
-          <div className={`mt-2 flex items-center gap-3 rounded-md bg-white/5 p-2.5 ${collapsed ? 'justify-center' : ''}`}>
+          <div className={`mt-2 flex items-center gap-3 rounded-xl bg-white/5 p-2.5 ${collapsed ? 'justify-center' : ''}`}>
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-400 to-accent-600 text-xs font-bold text-white">
               ر
             </div>
@@ -207,14 +196,18 @@ export default function Sidebar({ current, onNavigate, mobileOpen, onCloseMobile
               </div>
             )}
             {!collapsed && (
-              <button onClick={() => onSignOut?.()} className="state-layer rounded-sm p-1 text-slate-500 hover:text-slate-200" aria-label="خروج">
+              <button
+                onClick={() => onSignOut?.()}
+                className="state-layer rounded-sm p-1 text-slate-500 hover:text-slate-200"
+                aria-label="خروج"
+              >
                 <LogOut size={15} />
               </button>
             )}
           </div>
         </div>
 
-        {/* Collapse toggle — M3 FAB-style floating button */}
+        {/* Collapse toggle */}
         <button
           onClick={() => setCollapsed(!collapsed)}
           className="absolute -left-3 top-20 hidden h-6 w-6 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-elev-2 transition-colors duration-sm hover:text-brand-600 lg:flex"

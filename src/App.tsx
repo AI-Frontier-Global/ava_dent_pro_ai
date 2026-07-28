@@ -35,6 +35,17 @@ import SignupPage from './pages/SignupPage';
 import SuperAdminPage from './pages/SuperAdminPage';
 import HelpCenterPage from './pages/HelpCenterPage';
 import type { PlanId } from './types/saas';
+// V2 components (feature-flagged)
+import SidebarV2 from './components/ui-v2/SidebarV2';
+import LoginPageV2 from './components/ui-v2/LoginPageV2';
+import DashboardV2 from './components/ui-v2/DashboardV2';
+import PatientsV2 from './components/ui-v2/PatientsV2';
+import AppointmentsV2 from './components/ui-v2/AppointmentsV2';
+import SettingsV2 from './components/ui-v2/SettingsV2';
+import GlobalCopilotSidebar from './components/ui-v2/GlobalCopilotSidebar';
+import AIPlatform from './components/ui-v2/AIPlatform';
+
+const NEW_UX = import.meta.env.VITE_ENABLE_NEW_AI_UX === 'true';
 
 const pageMeta: Record<Page, { title: string; subtitle: string }> = {
   dashboard: { title: 'لوحة التحكم', subtitle: 'نظرة عامة على نشاط العيادة اليوم' },
@@ -53,6 +64,7 @@ const pageMeta: Record<Page, { title: string; subtitle: string }> = {
   'ai-center': { title: 'مركز الموفرين', subtitle: 'إدارة موفرين الذكاء الاصطناعي وتتبّع التكاليف' },
   'technology': { title: 'التقنيات المستخدمة', subtitle: 'نظرة مفصّلة على تقنيات الذكاء الاصطناعي' },
   settings: { title: 'الإعدادات', subtitle: 'إدارة إعدادات العيادة والتكاملات' },
+  'ai-platform': { title: 'منصة الذكاء الاصطناعي', subtitle: 'إدارة مزودي الذكاء الاصطناعي والمفاتيح' },
 };
 
 function App() {
@@ -146,6 +158,17 @@ function App() {
   }
 
   if ((view === 'login' || !session) && view !== 'why-us') {
+    if (NEW_UX) {
+      return (
+        <LoginPageV2
+          onLogin={handleLogin}
+          onBack={backToLanding}
+          signIn={signIn}
+          signUp={signUp}
+          signInWithGoogle={signInWithGoogle}
+        />
+      );
+    }
     return (
       <LoginPage
         onLogin={handleLogin}
@@ -168,6 +191,26 @@ function App() {
   const meta = pageMeta[page];
 
   const renderPage = () => {
+    if (NEW_UX) {
+      switch (page) {
+        case 'dashboard':
+          return <DashboardV2 store={store} onNavigate={(p) => setPage(p)} />;
+        case 'scheduling':
+          return <AppointmentsV2 store={store} />;
+        case 'patient-intake':
+          return <PatientsV2 store={store} />;
+        case 'settings':
+          return <SettingsV2 store={store} />;
+        case 'ai-platform':
+          return <AIPlatform onNavigate={(p) => setPage(p)} />;
+        default:
+          return renderLegacyPage();
+      }
+    }
+    return renderLegacyPage();
+  };
+
+  const renderLegacyPage = () => {
     switch (page) {
       case 'dashboard':
         return <DashboardPage store={store} onNavigate={(p) => setPage(p)} />;
@@ -199,6 +242,8 @@ function App() {
         return <AICenter store={store} />;
       case 'technology':
         return <TechnologyPage />;
+      case 'ai-platform':
+        return <AIPlatform onNavigate={(p) => setPage(p)} />;
       case 'settings':
         return <SettingsPage store={store} />;
       default:
@@ -209,13 +254,23 @@ function App() {
   return (
     <ToastProvider>
       <div className="flex min-h-screen bg-slate-100">
-        <Sidebar
-          current={page}
-          onNavigate={setPage}
-          mobileOpen={mobileOpen}
-          onCloseMobile={() => setMobileOpen(false)}
-          onSignOut={handleSignOut}
-        />
+        {NEW_UX ? (
+          <SidebarV2
+            current={page}
+            onNavigate={setPage}
+            mobileOpen={mobileOpen}
+            onCloseMobile={() => setMobileOpen(false)}
+            onSignOut={handleSignOut}
+          />
+        ) : (
+          <Sidebar
+            current={page}
+            onNavigate={setPage}
+            mobileOpen={mobileOpen}
+            onCloseMobile={() => setMobileOpen(false)}
+            onSignOut={handleSignOut}
+          />
+        )}
 
         <div className="flex min-w-0 flex-1 flex-col">
           <Topbar
@@ -267,6 +322,7 @@ function App() {
         />
       )}
       <ChatWidget />
+      {NEW_UX && <GlobalCopilotSidebar onNavigate={(p) => setPage(p)} />}
     </ToastProvider>
   );
 }
