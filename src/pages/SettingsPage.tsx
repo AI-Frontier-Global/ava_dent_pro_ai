@@ -36,12 +36,13 @@ import {
   getStatus,
   getModels,
   deleteModel,
-  chat as bridgeChat,
   startService,
   stopService,
   pullModel,
   type BridgeModel,
 } from '../lib/ollamaBridge';
+import { unifiedChat } from '../lib/unified-ai-service';
+import type { ProviderConfig } from '../lib/unified-ai-service';
 
 type Tab = 'clinic' | 'hours' | 'finance' | 'notifications' | 'integrations' | 'ai';
 
@@ -274,17 +275,20 @@ export function AISettingsPanel() {
     setTestMessages((m) => [...m, { sender: 'user', text: content }]);
     setTestInput('');
     setTestLoading(true);
-    const reply = await bridgeChat(
-      bridgeUrl,
-      content,
-      testMessages
-        .slice(-8)
-        .map((m) => ({ role: (m.sender === 'user' ? 'user' : 'assistant') as 'user' | 'assistant', content: m.text })),
-      defaultModel,
+    const reply = await unifiedChat(
+      { id: 'ollama', label: 'Ollama', apiKey: bridgeUrl, model: defaultModel, enabled: true } as ProviderConfig,
+      {
+        systemPrompt: settings.system_prompt || undefined,
+        messages: testMessages
+          .slice(-8)
+          .map((m) => ({ role: (m.sender === 'user' ? 'user' : 'assistant') as 'user' | 'assistant', content: m.text })),
+        temperature: 0.7,
+        maxTokens: 500,
+      },
     );
     setTestLoading(false);
     if (reply) {
-      setTestMessages((m) => [...m, { sender: 'ai', text: reply }]);
+      setTestMessages((m) => [...m, { sender: 'ai', text: reply.text }]);
     } else {
       setTestMessages((m) => [
         ...m,

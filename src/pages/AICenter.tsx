@@ -7,33 +7,9 @@ import APIKeyManager from '../components/APIKeyManager';
 import AIDashboard from '../components/AIDashboard';
 import { smartChat } from '../lib/ai-switcher';
 import { useToast } from '../components/Toast';
+import { loadConfigs, saveConfigs } from '../lib/ai-config';
 
 type Tab = 'dashboard' | 'keys' | 'chat';
-
-const STORAGE_KEY = 'ai_provider_configs';
-
-const DEFAULT_CONFIGS: ProviderConfig[] = [
-  { id: 'openai', label: 'OpenAI', apiKey: '', model: 'gpt-4o-mini', enabled: false },
-  { id: 'anthropic', label: 'Anthropic Claude', apiKey: '', model: 'claude-3-5-haiku-20241022', enabled: false },
-  { id: 'google', label: 'Google Gemini', apiKey: '', model: 'gemini-1.5-flash', enabled: false },
-  { id: 'ollama', label: 'Ollama محلي', apiKey: 'local', model: 'llama3.2', enabled: true },
-];
-
-function loadConfigs(): ProviderConfig[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return DEFAULT_CONFIGS;
-    const parsed = JSON.parse(raw) as ProviderConfig[];
-    // ادمج مع الإعدادات الافتراضية لضمان وجود كل الموفرين
-    return DEFAULT_CONFIGS.map((d) => parsed.find((p) => p.id === d.id) ?? d);
-  } catch {
-    return DEFAULT_CONFIGS;
-  }
-}
-
-function saveConfigs(configs: ProviderConfig[]): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(configs));
-}
 
 interface Props {
   store: Store;
@@ -41,7 +17,7 @@ interface Props {
 
 export default function AICenter({ store }: Props) {
   const [tab, setTab] = useState<Tab>('dashboard');
-  const [configs, setConfigs] = useState<ProviderConfig[]>(DEFAULT_CONFIGS);
+  const [configs, setConfigs] = useState<ProviderConfig[]>([]);
   const toast = useToast();
 
   useEffect(() => {

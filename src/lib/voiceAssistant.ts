@@ -1,4 +1,5 @@
-import { chat } from './ollamaBridge';
+import { smartChat } from './ai-switcher';
+import type { ProviderConfig } from './unified-ai-service';
 
 export type VoiceState = 'idle' | 'listening' | 'thinking' | 'speaking';
 
@@ -77,8 +78,7 @@ export type VoiceCallbacks = {
 };
 
 export function createVoiceAssistant(
-  bridgeUrl: string,
-  model: string | undefined,
+  configs: ProviderConfig[],
   callbacks: VoiceCallbacks,
 ) {
   const synth = getSynth();
@@ -173,12 +173,18 @@ export function createVoiceAssistant(
     callbacks.onStateChange('thinking');
     let reply: string | null = null;
     try {
-      reply = await chat(bridgeUrl, text, [], model);
+      const result = await smartChat(configs, {
+        systemPrompt: DENTAL_SYSTEM_PROMPT,
+        messages: [{ role: 'user', content: text }],
+        temperature: 0.7,
+        maxTokens: 300,
+      }, { strategy: 'cost', fallback: true });
+      reply = result.response?.text ?? null;
     } catch {
       reply = null;
     }
     if (!reply) {
-      reply = 'عذراً، المساعد المحلي غير متاح حالياً. تأكد من تشغيل جسر Ollama على المنفذ 3001. يمكنك كتابة سؤالك كنص في هذه الأثناء.';
+      reply = 'عذراً، لا يستطيع المساعد الذكي الرد حالياً. تأكد من تفعيل أحد موفرّي الذكاء الاصطناعي من الإعدادات.';
     }
     callbacks.onAssistantMessage(reply);
     await speak(reply);

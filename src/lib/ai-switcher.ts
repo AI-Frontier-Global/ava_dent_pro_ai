@@ -19,7 +19,7 @@ export async function smartChat(
   const fallback = options.fallback ?? true;
   const attempts: { provider: AIProviderId; success: boolean; error?: string }[] = [];
 
-  const enabled = configs.filter((c) => c.enabled && c.apiKey);
+  const enabled = configs.filter((c) => c.enabled && c.apiKey && c.apiKey !== '');
   if (enabled.length === 0) {
     return { response: null, usedProvider: null, attempts };
   }

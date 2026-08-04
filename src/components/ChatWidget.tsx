@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { X, Send, WifiOff } from 'lucide-react';
-import { chat as bridgeChat } from '../lib/ollamaBridge';
+import { smartChat } from '../lib/ai-switcher';
+import { loadConfigsWithOllamaSettings } from '../lib/ai-config';
+import type { ProviderConfig } from '../lib/unified-ai-service';
 
 const responses: Record<string, string> = {
   greeting: `مرحباً بك في عيادة سمايل! 👋
@@ -446,29 +448,25 @@ type Message = { sender: Sender; text: string; timestamp: Date };
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-async function fetchSettings(): Promise<{ enabled: boolean; bridge_url: string; model: string } | null> {
-  try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/clinic_ai_settings?id=eq.1&select=enabled,bridge_url,model`, {
-      headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
-    });
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data && data.length > 0 ? data[0] : null;
-  } catch {
-    return null;
-  }
-}
+const WIDGET_SYSTEM_PROMPT =
+  'أنت مساعد ذكي لعيادة أسنان. أجب بالعربية باختصار ووضوح. ساعد في حجز المواعيد، الأسعار، الخدمات، ومعلومات العيادة.';
 
-async function askOllama(message: string, history: Message[]): Promise<string | null> {
-  const settings = await fetchSettings();
-  if (!settings || !settings.enabled) return null;
-  const trimmedHistory = history
+async function askAI(message: string, history: Message[]): Promise<string | null> {
+  const configs = await loadConfigsWithOllamaSettings();
+  const enabled = configs.filter((c) => c.enabled && c.apiKey);
+  if (enabled.length === 0) return null;
+  const historyMsgs = history
     .slice(-8)
     .map((m) => ({
       role: (m.sender === 'customer' ? 'user' : 'assistant') as 'user' | 'assistant',
       content: m.text,
     }));
-  return bridgeChat(settings.bridge_url, message, trimmedHistory, settings.model);
+  const result = await smartChat(
+    configs,
+    { systemPrompt: WIDGET_SYSTEM_PROMPT, messages: historyMsgs, temperature: 0.7, maxTokens: 500 },
+    { strategy: 'cost', fallback: true },
+  );
+  return result.response?.text ?? null;
 }
 
 export default function AIAssistant() {
@@ -508,7 +506,7 @@ export default function AIAssistant() {
 
   const respondTo = async (text: string) => {
     setIsTyping(true);
-    const aiReply = await askOllama(text, messages);
+    const aiReply = await askAI(text, messages);
     if (aiReply) {
       addMessage('ai', aiReply);
       setFallbackNotice(false);

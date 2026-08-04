@@ -3,26 +3,7 @@
 
 import type { ProviderConfig, UnifiedChatRequest } from './unified-ai-service';
 import { smartChat } from './ai-switcher';
-
-const STORAGE_KEY = 'ai_provider_configs';
-
-const DEFAULT_CONFIGS: ProviderConfig[] = [
-  { id: 'openai', label: 'OpenAI', apiKey: '', model: 'gpt-4o-mini', enabled: false },
-  { id: 'anthropic', label: 'Anthropic Claude', apiKey: '', model: 'claude-3-5-haiku-20241022', enabled: false },
-  { id: 'google', label: 'Google Gemini', apiKey: '', model: 'gemini-1.5-flash', enabled: false },
-  { id: 'ollama', label: 'Ollama محلي', apiKey: 'local', model: 'llama3.2', enabled: true },
-];
-
-function loadConfigs(): ProviderConfig[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return DEFAULT_CONFIGS;
-    const parsed = JSON.parse(raw) as ProviderConfig[];
-    return DEFAULT_CONFIGS.map((d) => parsed.find((p) => p.id === d.id) ?? d);
-  } catch {
-    return DEFAULT_CONFIGS;
-  }
-}
+import { loadConfigs } from './ai-config';
 
 const HELP_SYSTEM_PROMPT =
   'أنت مساعد ذكي في مركز مساعدة لمنصة DentalPro لإدارة عيادات الأسنان في الوطن العربي. ' +

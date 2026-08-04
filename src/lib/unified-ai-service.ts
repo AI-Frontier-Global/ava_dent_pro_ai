@@ -11,6 +11,7 @@ import {
 } from './ai-providers/anthropic';
 import { googleChat, googleHealthCheck, GOOGLE_PRICING, type GoogleModel, type GoogleMessage } from './ai-providers/google';
 import { recordUsage, type ProviderId } from './cost-tracker';
+import { chat as ollamaChat, getStatus as ollamaGetStatus, type ChatTurn } from './ollamaBridge';
 
 export type AIProviderId = 'openai' | 'anthropic' | 'google' | 'ollama';
 
@@ -98,6 +99,21 @@ export async function unifiedChat(
     return { text: res.text, provider: 'google', model: res.model, usage: res.usage, costUsd };
   }
 
+  if (config.id === 'ollama') {
+    const history: ChatTurn[] = request.messages.map((m) => ({
+      role: m.role,
+      content: m.content,
+    }));
+    const lastUser = [...request.messages].reverse().find((m) => m.role === 'user');
+    const userContent = lastUser?.content ?? '';
+    const reply = await ollamaChat(config.apiKey, userContent, history, config.model);
+    if (!reply) return null;
+    const totalTokens = Math.ceil(reply.length / 4);
+    const usage = { promptTokens: totalTokens, completionTokens: totalTokens, totalTokens };
+    recordUsage('ollama' as ProviderId, totalTokens, 0);
+    return { text: reply, provider: 'ollama', model: config.model, usage, costUsd: 0 };
+  }
+
   return null;
 }
 
@@ -111,6 +127,10 @@ export async function healthCheck(config: ProviderConfig): Promise<boolean> {
   }
   if (config.id === 'google') {
     return googleHealthCheck(config.apiKey);
+  }
+  if (config.id === 'ollama') {
+    const status = await ollamaGetStatus(config.apiKey);
+    return !!(status && status.bridge === 'online' && status.ollama);
   }
   return false;
 }

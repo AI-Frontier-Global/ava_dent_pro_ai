@@ -23,6 +23,8 @@ import { computeClinicInsights, predictNoShowWithModel, RISK_STYLES } from '../l
 import type { NoShowPrediction } from '../lib/noShowEngine';
 import { createVoiceAssistant } from '../lib/voiceAssistant';
 import type { VoiceAssistant, VoiceState, VoiceMessage } from '../lib/voiceAssistant';
+import { loadConfigsWithOllamaSettings } from '../lib/ai-config';
+import type { ProviderConfig } from '../lib/unified-ai-service';
 import { buildTrainingSet, trainLogisticRegression } from '../lib/mlModel';
 import type { ModelWeights } from '../lib/mlModel';
 import { loadModel, saveModel, getModelMeta } from '../lib/modelStore';
@@ -480,26 +482,18 @@ function VoiceTab() {
   const [error, setError] = useState<string | null>(null);
   const assistantRef = useRef<VoiceAssistant | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-
-  const [bridgeUrl, setBridgeUrl] = useState('http://localhost:3001');
-  const [model, setModel] = useState('llama3.2');
+  const [configs, setConfigs] = useState<ProviderConfig[]>([]);
 
   useEffect(() => {
     void (async () => {
-      const { data } = await supabase
-        .from('clinic_ai_settings')
-        .select('bridge_url, model')
-        .eq('id', 1)
-        .maybeSingle();
-      if (data) {
-        if (data.bridge_url) setBridgeUrl(data.bridge_url);
-        if (data.model) setModel(data.model);
-      }
+      const loaded = await loadConfigsWithOllamaSettings();
+      setConfigs(loaded);
     })();
   }, []);
 
   useEffect(() => {
-    assistantRef.current = createVoiceAssistant(bridgeUrl, model, {
+    if (configs.length === 0) return;
+    assistantRef.current = createVoiceAssistant(configs, {
       onStateChange: setState,
       onUserMessage: (text) => {
         setMessages((prev) => [...prev, { role: 'user', text, timestamp: Date.now() }]);
@@ -516,7 +510,7 @@ function VoiceTab() {
       assistantRef.current?.dispose();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [configs]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });

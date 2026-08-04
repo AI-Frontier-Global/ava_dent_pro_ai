@@ -1,6 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { Sparkles, Bot, Send, X, Lightbulb, TrendingUp, FileText, Calendar } from 'lucide-react';
 import type { Page } from '@/components/Sidebar';
+import { smartChat } from '@/lib/ai-switcher';
+import { loadConfigsWithOllamaSettings } from '@/lib/ai-config';
+import type { ProviderConfig } from '@/lib/unified-ai-service';
 
 type Message = {
   id: string;
@@ -29,7 +32,15 @@ export default function GlobalCopilotSidebar({ onNavigate }: Props) {
     },
   ]);
   const [input, setInput] = useState('');
+  const [thinking, setThinking] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const configsRef = useRef<ProviderConfig[]>([]);
+
+  useEffect(() => {
+    void (async () => {
+      configsRef.current = await loadConfigsWithOllamaSettings();
+    })();
+  }, []);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -37,19 +48,39 @@ export default function GlobalCopilotSidebar({ onNavigate }: Props) {
     }
   }, [messages]);
 
-  const handleSend = () => {
-    if (!input.trim()) return;
+  const handleSend = async () => {
+    if (!input.trim() || thinking) return;
     const userMsg: Message = { id: Date.now() + '', role: 'user', content: input.trim() };
     setMessages((prev) => [...prev, userMsg]);
     setInput('');
-    setTimeout(() => {
-      const reply: Message = {
-        id: Date.now() + 1 + '',
-        role: 'assistant',
-        content: 'شكراً لسؤالك! يمكنني مساعدتك في تحليل بيانات العيادة، التنبؤ بالغياب، وإنشاء التقارير. اختر أحد الخيارات المقترحة للبدء.',
-      };
-      setMessages((prev) => [...prev, reply]);
-    }, 800);
+    setThinking(true);
+
+    let replyText = 'شكراً لسؤالك! يمكنني مساعدتك في تحليل بيانات العيادة، التنبؤ بالغياب، وإنشاء التقارير. اختر أحد الخيارات المقترحة للبدء.';
+    try {
+      const configs = configsRef.current;
+      const enabled = configs.filter((c) => c.enabled && c.apiKey);
+      if (enabled.length > 0) {
+        const result = await smartChat(
+          configs,
+          {
+            systemPrompt: 'أنت مساعد ذكي لعيادة أسنان. أجب بالعربية باختصار ووضوح.',
+            messages: [{ role: 'user', content: userMsg.content }],
+            temperature: 0.7,
+            maxTokens: 300,
+          },
+          { strategy: 'cost', fallback: true },
+        );
+        if (result.response?.text) {
+          replyText = result.response.text;
+        }
+      }
+    } catch {
+      // استخدم الرد الافتراضي
+    }
+
+    const reply: Message = { id: Date.now() + 1 + '', role: 'assistant', content: replyText };
+    setMessages((prev) => [...prev, reply]);
+    setThinking(false);
   };
 
   if (!open) {
