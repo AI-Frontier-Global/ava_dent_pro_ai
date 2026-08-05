@@ -1,23 +1,20 @@
-// الخدمة الموحدة للذكاء الاصطناعي — واجهة واحدة لكل الموفرين.
-// تختار الموفر النشط، تُرسل الطلب، تُسجّل التكلفة، وتُرجع رداً موحداً.
+// Unified AI Service — Enterprise Gateway Architecture
+//
+// The browser NEVER calls provider SDKs directly. All cloud provider calls
+// go through the Supabase Edge Function (ai-gateway), which loads the
+// encrypted API key server-side and calls the provider.
+//
+// Ollama (local) still goes through the local bridge.
 
-import { openaiChat, openaiHealthCheck, OPENAI_PRICING, type OpenAIModel, type OpenAIMessage } from './ai-providers/openai';
-import {
-  anthropicChat,
-  anthropicHealthCheck,
-  ANTHROPIC_PRICING,
-  type AnthropicModel,
-  type AnthropicMessage,
-} from './ai-providers/anthropic';
-import { googleChat, googleHealthCheck, GOOGLE_PRICING, type GoogleModel, type GoogleMessage } from './ai-providers/google';
-import { recordUsage, type ProviderId } from './cost-tracker';
-import { chat as ollamaChat, getStatus as ollamaGetStatus, type ChatTurn } from './ollamaBridge';
+import { callProviderGateway, type ProviderConfig } from "./providers/repository";
+import { recordUsage, type ProviderId } from "./cost-tracker";
+import { chat as ollamaChat, type ChatTurn } from "./ollamaBridge";
 
-export type AIProviderId = 'openai' | 'anthropic' | 'google' | 'ollama';
+export type AIProviderId = "openai" | "anthropic" | "google" | "ollama";
 
 export interface UnifiedChatRequest {
   systemPrompt?: string;
-  messages: { role: 'user' | 'assistant'; content: string }[];
+  messages: { role: "user" | "assistant"; content: string }[];
   temperature?: number;
   maxTokens?: number;
 }
@@ -34,117 +31,58 @@ export interface UnifiedChatResponse {
   costUsd: number;
 }
 
-export interface ProviderConfig {
-  id: AIProviderId;
-  label: string;
-  apiKey: string;
-  model: string;
-  enabled: boolean;
-}
+export type { ProviderConfig } from "./providers/repository";
 
 export async function unifiedChat(
   config: ProviderConfig,
   request: UnifiedChatRequest,
 ): Promise<UnifiedChatResponse | null> {
-  if (!config.enabled || !config.apiKey) return null;
+  if (!config.enabled) return null;
 
-  if (config.id === 'openai') {
-    const messages: OpenAIMessage[] = [
-      ...(request.systemPrompt ? [{ role: 'system' as const, content: request.systemPrompt }] : []),
-      ...request.messages.map((m) => ({ role: m.role, content: m.content })),
-    ];
-    const res = await openaiChat(config.apiKey, messages, {
-      model: config.model as OpenAIModel,
-      temperature: request.temperature,
-      maxTokens: request.maxTokens,
-    });
-    if (!res) return null;
-    const pricing = OPENAI_PRICING[config.model as OpenAIModel] ?? { input: 0, output: 0 };
-    const costUsd = (res.usage.promptTokens * pricing.input + res.usage.completionTokens * pricing.output) / 1000;
-    recordUsage('openai' as ProviderId, res.usage.totalTokens, costUsd);
-    return { text: res.text, provider: 'openai', model: res.model, usage: res.usage, costUsd };
-  }
-
-  if (config.id === 'anthropic') {
-    const messages: AnthropicMessage[] = request.messages.map((m) => ({
-      role: m.role,
-      content: m.content,
-    }));
-    const res = await anthropicChat(config.apiKey, request.systemPrompt ?? '', messages, {
-      model: config.model as AnthropicModel,
-      temperature: request.temperature,
-      maxTokens: request.maxTokens,
-    });
-    if (!res) return null;
-    const pricing = ANTHROPIC_PRICING[config.model as AnthropicModel] ?? { input: 0, output: 0 };
-    const costUsd = (res.usage.promptTokens * pricing.input + res.usage.completionTokens * pricing.output) / 1000;
-    recordUsage('anthropic' as ProviderId, res.usage.totalTokens, costUsd);
-    return { text: res.text, provider: 'anthropic', model: res.model, usage: res.usage, costUsd };
-  }
-
-  if (config.id === 'google') {
-    const messages: GoogleMessage[] = request.messages.map((m) => ({
-      role: m.role === 'assistant' ? 'model' : 'user',
-      content: m.content,
-    }));
-    const res = await googleChat(config.apiKey, request.systemPrompt ?? '', messages, {
-      model: config.model as GoogleModel,
-      temperature: request.temperature,
-      maxTokens: request.maxTokens,
-    });
-    if (!res) return null;
-    const pricing = GOOGLE_PRICING[config.model as GoogleModel] ?? { input: 0, output: 0 };
-    const costUsd = (res.usage.promptTokens * pricing.input + res.usage.completionTokens * pricing.output) / 1000;
-    recordUsage('google' as ProviderId, res.usage.totalTokens, costUsd);
-    return { text: res.text, provider: 'google', model: res.model, usage: res.usage, costUsd };
-  }
-
-  if (config.id === 'ollama') {
+  if (config.id === "ollama") {
     const history: ChatTurn[] = request.messages.map((m) => ({
       role: m.role,
       content: m.content,
     }));
-    const lastUser = [...request.messages].reverse().find((m) => m.role === 'user');
-    const userContent = lastUser?.content ?? '';
-    const reply = await ollamaChat(config.apiKey, userContent, history, config.model);
+    const lastUser = [...request.messages].reverse().find((m) => m.role === "user");
+    const userContent = lastUser?.content ?? "";
+    const reply = await ollamaChat(config.model, userContent, history, config.model);
     if (!reply) return null;
     const totalTokens = Math.ceil(reply.length / 4);
     const usage = { promptTokens: totalTokens, completionTokens: totalTokens, totalTokens };
-    recordUsage('ollama' as ProviderId, totalTokens, 0);
-    return { text: reply, provider: 'ollama', model: config.model, usage, costUsd: 0 };
+    recordUsage("ollama" as ProviderId, totalTokens, 0);
+    return { text: reply, provider: "ollama", model: config.model, usage, costUsd: 0 };
   }
 
-  return null;
+  // Cloud providers — route through the edge function gateway
+  const response = await callProviderGateway(config.id, request, config.model);
+  if (!response) return null;
+  recordUsage(config.id as ProviderId, response.usage.totalTokens, response.costUsd);
+  return response;
 }
 
 export async function healthCheck(config: ProviderConfig): Promise<boolean> {
-  if (!config.apiKey) return false;
-  if (config.id === 'openai') {
-    return openaiHealthCheck(config.apiKey);
+  if (!config.hasApiKey) return false;
+  if (config.id === "ollama") {
+    const { getStatus } = await import("./ollamaBridge");
+    const status = await getStatus(config.model);
+    return !!(status && status.bridge === "online" && status.ollama);
   }
-  if (config.id === 'anthropic') {
-    return anthropicHealthCheck(config.apiKey);
-  }
-  if (config.id === 'google') {
-    return googleHealthCheck(config.apiKey);
-  }
-  if (config.id === 'ollama') {
-    const status = await ollamaGetStatus(config.apiKey);
-    return !!(status && status.bridge === 'online' && status.ollama);
-  }
-  return false;
+  // For cloud providers, we can't do a direct health check without
+  // exposing the key. We trust the config status from the repository.
+  return config.enabled && config.hasApiKey;
 }
 
 export const PROVIDER_LABELS: Record<AIProviderId, string> = {
-  openai: 'OpenAI',
-  anthropic: 'Anthropic Claude',
-  google: 'Google Gemini',
-  ollama: 'Ollama محلي',
+  openai: "OpenAI",
+  anthropic: "Anthropic Claude",
+  google: "Google Gemini",
+  ollama: "Ollama محلي",
 };
 
 export const PROVIDER_MODELS: Record<AIProviderId, string[]> = {
-  openai: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-3.5-turbo'],
-  anthropic: ['claude-3-5-sonnet-20241022', 'claude-3-5-haiku-20241022', 'claude-3-opus-20240229'],
-  google: ['gemini-1.5-pro', 'gemini-1.5-flash', 'gemini-2.0-flash-exp'],
-  ollama: ['llama3.2', 'llama3.1', 'mistral'],
+  openai: ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-3.5-turbo"],
+  anthropic: ["claude-3-5-sonnet-20241022", "claude-3-5-haiku-20241022", "claude-3-opus-20240229"],
+  google: ["gemini-1.5-pro", "gemini-1.5-flash", "gemini-2.0-flash-exp"],
+  ollama: ["llama3.2", "llama3.1", "mistral"],
 };

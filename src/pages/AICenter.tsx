@@ -7,7 +7,8 @@ import APIKeyManager from '../components/APIKeyManager';
 import AIDashboard from '../components/AIDashboard';
 import { smartChat } from '../lib/ai-switcher';
 import { useToast } from '../components/Toast';
-import { loadConfigs, saveConfigs } from '../lib/ai-config';
+import { loadConfigs } from '../lib/ai-config';
+import { saveProviderConfig } from '../lib/providers/repository';
 
 type Tab = 'dashboard' | 'keys' | 'chat';
 
@@ -21,16 +22,16 @@ export default function AICenter({ store }: Props) {
   const toast = useToast();
 
   useEffect(() => {
-    setConfigs(loadConfigs());
+    void loadConfigs().then(setConfigs);
   }, []);
 
   const handleSaveConfig = useCallback((id: AIProviderId, patch: Partial<ProviderConfig>) => {
-    setConfigs((prev) => {
-      const next = prev.map((c) => (c.id === id ? { ...c, ...patch } : c));
-      saveConfigs(next);
-      return next;
-    });
-    toast('تم حفظ إعدادات الموفر', 'success');
+    void (async () => {
+      await saveProviderConfig(id, patch);
+      const refreshed = await loadConfigs();
+      setConfigs(refreshed);
+      toast('تم حفظ إعدادات الموفر', 'success');
+    })();
   }, [toast]);
 
   return (
@@ -101,7 +102,7 @@ function ChatTab({ configs }: { configs: ProviderConfig[] }) {
     setInput('');
     setLoading(true);
 
-    const enabled = configs.filter((c) => c.enabled && c.apiKey);
+    const enabled = configs.filter((c) => c.enabled && c.hasApiKey);
     if (enabled.length === 0) {
       setMessages((m) => [...m, { role: 'assistant', content: 'لا يوجد موفر مفعّل. فعّل موفراً من تبويب مفاتيح API.' }]);
       setLoading(false);
@@ -203,7 +204,7 @@ function ChatTab({ configs }: { configs: ProviderConfig[] }) {
       </div>
 
       {/* Warning */}
-      {configs.filter((c) => c.enabled && c.apiKey).length === 0 && (
+      {configs.filter((c) => c.enabled && c.hasApiKey).length === 0 && (
         <div className="flex items-start gap-2 rounded-xl bg-amber-50 p-4 text-sm text-amber-700">
           <AlertTriangle size={18} className="mt-0.5 shrink-0" />
           <p>لا يوجد موفر مفعّل بمفتاح صالح. انتقل لتبويب "مفاتيح API" لإضافة مفتاح وتفعيل موفر.</p>

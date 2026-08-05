@@ -24,7 +24,7 @@ export default function AIStatusBar({ configs }: Props) {
   };
 
   useEffect(() => {
-    configs.filter((c) => c.enabled && c.apiKey).forEach((c) => void check(c));
+    configs.filter((c) => c.enabled && c.hasApiKey).forEach((c) => void check(c));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

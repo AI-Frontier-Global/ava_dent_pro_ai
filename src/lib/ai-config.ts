@@ -1,74 +1,66 @@
-// مصدر واحد لإعدادات موفرّي الذكاء الاصطناعي — يقرأ من localStorage
-// ويدمج إعدادات Ollama المحفوظة في Supabase (bridge_url, model).
+// Provider Configuration — delegates to the Enterprise Provider Repository.
+//
+// This file is kept for backward compatibility — all existing imports
+// (loadConfigs, saveConfigs, updateConfig, loadConfigsWithOllamaSettings)
+// now route through the repository, which is the single source of truth.
+//
+// API keys are stored in Supabase, NOT localStorage.
 
-import type { ProviderConfig, AIProviderId } from './unified-ai-service';
-import { supabase } from './supabase';
+import type { ProviderConfig, AIProviderId } from "./unified-ai-service";
+import {
+  loadProviderConfigs,
+  saveProviderConfig,
+  getDefaultConfigs,
+} from "./providers/repository";
+import { supabase } from "./supabase";
 
-const STORAGE_KEY = 'ai_provider_configs';
+export async function loadConfigs(): Promise<ProviderConfig[]> {
+  return loadProviderConfigs();
+}
 
-export const DEFAULT_CONFIGS: ProviderConfig[] = [
-  { id: 'openai', label: 'OpenAI', apiKey: '', model: 'gpt-4o-mini', enabled: false },
-  { id: 'anthropic', label: 'Anthropic Claude', apiKey: '', model: 'claude-3-5-haiku-20241022', enabled: false },
-  { id: 'google', label: 'Google Gemini', apiKey: '', model: 'gemini-1.5-flash', enabled: false },
-  { id: 'ollama', label: 'Ollama محلي', apiKey: 'local', model: 'llama3.2', enabled: true },
-];
-
-function loadFromStorage(): ProviderConfig[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return DEFAULT_CONFIGS;
-    const parsed = JSON.parse(raw) as ProviderConfig[];
-    return DEFAULT_CONFIGS.map((d) => parsed.find((p) => p.id === d.id) ?? d);
-  } catch {
-    return DEFAULT_CONFIGS;
+export async function saveConfigs(configs: ProviderConfig[]): Promise<void> {
+  for (const c of configs) {
+    if (c.id === "ollama") continue;
+    await saveProviderConfig(c.id, { model: c.model, enabled: c.enabled });
   }
 }
 
-export function loadConfigs(): ProviderConfig[] {
-  return loadFromStorage();
-}
-
-export function saveConfigs(configs: ProviderConfig[]): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(configs));
-}
-
-export function updateConfig(
+export async function updateConfig(
   id: AIProviderId,
   patch: Partial<ProviderConfig>,
-): ProviderConfig[] {
-  const current = loadFromStorage();
-  const next = current.map((c) => (c.id === id ? { ...c, ...patch } : c));
-  saveConfigs(next);
-  return next;
+): Promise<ProviderConfig[]> {
+  await saveProviderConfig(id, patch);
+  return loadProviderConfigs();
 }
 
 /**
- * يحمل إعدادات Ollama من Supabase (bridge_url, model) ويدمجها في إعدادات
- * localStorage. هذا يضمن أن unifiedChat تستخدم نفس bridge_url المُعدّ في
- * صفحة الإعدادات.
+ * Loads provider configs and merges Ollama settings from clinic_ai_settings.
+ * This is the main entry point for components that need provider configs.
  */
 export async function loadConfigsWithOllamaSettings(): Promise<ProviderConfig[]> {
-  const base = loadFromStorage();
+  const base = await loadProviderConfigs();
   try {
     const { data } = await supabase
-      .from('clinic_ai_settings')
-      .select('enabled, bridge_url, model')
-      .eq('id', 1)
+      .from("clinic_ai_settings")
+      .select("enabled, bridge_url, model")
+      .eq("id", 1)
       .maybeSingle();
     if (data) {
       return base.map((c) =>
-        c.id === 'ollama'
+        c.id === "ollama"
           ? {
               ...c,
-              apiKey: data.bridge_url || c.apiKey,
               model: data.model || c.model,
               enabled: data.enabled ?? c.enabled,
+              hasApiKey: true,
             }
           : c,
       );
     }
   } catch {
-    // تجاهل — استخدم الإعدادات المحلية
+    // ignore — use base config
   }
   return base;
 }
+
+export { getDefaultConfigs as DEFAULT_CONFIGS };

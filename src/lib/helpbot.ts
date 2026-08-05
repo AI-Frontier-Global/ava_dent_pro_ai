@@ -71,8 +71,8 @@ export interface HelpbotResult {
 export async function helpbotChat(
   messages: { role: 'user' | 'assistant'; content: string }[],
 ): Promise<HelpbotResult> {
-  const configs = loadConfigs();
-  const enabled = configs.filter((c) => c.enabled && c.apiKey && c.id !== 'ollama');
+  const configs = await loadConfigs();
+  const enabled = configs.filter((c) => c.enabled && c.hasApiKey && c.id !== 'ollama');
 
   if (enabled.length > 0) {
     const request: UnifiedChatRequest = {

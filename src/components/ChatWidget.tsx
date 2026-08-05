@@ -453,7 +453,7 @@ const WIDGET_SYSTEM_PROMPT =
 
 async function askAI(message: string, history: Message[]): Promise<string | null> {
   const configs = await loadConfigsWithOllamaSettings();
-  const enabled = configs.filter((c) => c.enabled && c.apiKey);
+  const enabled = configs.filter((c) => c.enabled && c.hasApiKey);
   if (enabled.length === 0) return null;
   const historyMsgs = history
     .slice(-8)

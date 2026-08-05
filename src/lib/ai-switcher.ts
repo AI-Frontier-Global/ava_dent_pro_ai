@@ -1,8 +1,11 @@
-// نظام التبديل الذكي بين الموفرين — يختار الأفضل حسب التوفّر والتكلفة والتأخير.
+// Smart Provider Switcher — chooses the best provider based on availability, cost, and latency.
+//
+// Updated for Enterprise Architecture: configs no longer contain apiKey
+// (keys are server-side only). We check `hasApiKey` and `enabled` instead.
 
-import type { ProviderConfig, AIProviderId } from './unified-ai-service';
-import { unifiedChat, healthCheck, type UnifiedChatRequest, type UnifiedChatResponse } from './unified-ai-service';
-import { getProviderStats } from './cost-tracker';
+import type { ProviderConfig, AIProviderId } from "./unified-ai-service";
+import { unifiedChat, healthCheck, type UnifiedChatRequest, type UnifiedChatResponse } from "./unified-ai-service";
+import { getProviderStats } from "./cost-tracker";
 
 export interface SwitcherResult {
   response: UnifiedChatResponse | null;
@@ -19,7 +22,7 @@ export async function smartChat(
   const fallback = options.fallback ?? true;
   const attempts: { provider: AIProviderId; success: boolean; error?: string }[] = [];
 
-  const enabled = configs.filter((c) => c.enabled && c.apiKey && c.apiKey !== '');
+  const enabled = configs.filter((c) => c.enabled && c.hasApiKey);
   if (enabled.length === 0) {
     return { response: null, usedProvider: null, attempts };
   }
@@ -48,7 +51,7 @@ function rankProviders(configs: ProviderConfig[], strategy: 'cost' | 'speed' | '
     const order: AIProviderId[] = ['google', 'openai', 'anthropic', 'ollama'];
     return configs.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
   }
-  // cost: رتّب حسب متوسط التكلفة من سجل cost-tracker، ثم حسب الأولوية
+  // cost: rank by average cost from cost-tracker history, then by priority
   return configs.sort((a, b) => {
     const aCost = getProviderStats(a.id).avgCostPerCall;
     const bCost = getProviderStats(b.id).avgCostPerCall;

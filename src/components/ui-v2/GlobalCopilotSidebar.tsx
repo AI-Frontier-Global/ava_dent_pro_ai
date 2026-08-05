@@ -58,7 +58,7 @@ export default function GlobalCopilotSidebar({ onNavigate }: Props) {
     let replyText = 'شكراً لسؤالك! يمكنني مساعدتك في تحليل بيانات العيادة، التنبؤ بالغياب، وإنشاء التقارير. اختر أحد الخيارات المقترحة للبدء.';
     try {
       const configs = configsRef.current;
-      const enabled = configs.filter((c) => c.enabled && c.apiKey);
+      const enabled = configs.filter((c) => c.enabled && c.hasApiKey);
       if (enabled.length > 0) {
         const result = await smartChat(
           configs,

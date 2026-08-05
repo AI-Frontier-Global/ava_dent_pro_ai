@@ -37,12 +37,12 @@ export default function APIKeyManager({ configs, onSave }: Props) {
         <h3 className="text-lg font-bold text-slate-800">إدارة مفاتيح API</h3>
       </div>
       <p className="mb-5 text-sm text-slate-500">
-        أضف مفاتيح API لموفرين الذكاء الاصطناعي. تُخزّن المفاتيح محلياً في متصفحك ولا تُرسل لأي خادم آخر.
+        أضف مفاتيح API لموفرين الذكاء الاصطناعي. تُخزّن المفاتيح بشكل آمن في الخادم ولا تصل إلى المتصفح.
       </p>
 
       <div className="space-y-4">
         {configs.map((c) => {
-          const draft = drafts[c.id] ?? { apiKey: c.apiKey, model: c.model, enabled: c.enabled };
+          const draft = drafts[c.id] ?? { apiKey: c.hasApiKey ? '••••••••' : '', model: c.model, enabled: c.enabled };
           const id = c.id as AIProviderId;
           return (
             <div key={c.id} className="rounded-xl border border-slate-200 p-4">
