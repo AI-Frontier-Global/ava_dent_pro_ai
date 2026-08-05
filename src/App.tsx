@@ -1,11 +1,17 @@
 import { BrowserRouter } from 'react-router-dom';
 import AppRoutes from './router/AppRoutes';
+import { ErrorBoundary } from './components/reliability/ErrorBoundary';
+import { mountToastContainer } from './lib/reliability/toast';
+
+mountToastContainer();
 
 function App() {
   return (
-    <BrowserRouter>
-      <AppRoutes />
-    </BrowserRouter>
+    <ErrorBoundary pageName="AppRoot">
+      <BrowserRouter>
+        <AppRoutes />
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 }
 

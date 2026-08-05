@@ -10,10 +10,12 @@ import { ToastProvider } from '@/components/Toast';
 import Sidebar from '@/components/Sidebar';
 import Topbar from '@/components/Topbar';
 import ChatWidget from '@/components/ChatWidget';
-import BridgeStatusIndicator from '@/components/BridgeStatusIndicator';
 import AIPartnersShowcase from '@/components/AIPartnersShowcase';
 import SetupWizard from '@/pages/SetupWizard';
 import type { PlanId } from '@/types/saas';
+import { ErrorBoundary } from '@/components/reliability/ErrorBoundary';
+import { PageLoader } from '@/components/reliability/Loading';
+import { OfflineBanner } from '@/components/reliability/OfflineBanner';
 
 const NEW_UX = import.meta.env.VITE_ENABLE_NEW_AI_UX === 'true';
 
@@ -36,12 +38,6 @@ const pageMeta: Record<Page, { title: string; subtitle: string }> = {
   settings: { title: 'الإعدادات', subtitle: 'إدارة إعدادات العيادة والتكاملات' },
   'ai-platform': { title: 'منصة الذكاء الاصطناعي', subtitle: 'إدارة مزودي الذكاء الاصطناعي والمفاتيح' },
 };
-
-const PageLoader = () => (
-  <div className="flex h-64 items-center justify-center">
-    <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-brand-500" />
-  </div>
-);
 
 const LandingPage = lazy(() => import('@/pages/LandingPage'));
 const LoginPage = lazy(() => import('@/pages/LoginPage'));
@@ -183,13 +179,15 @@ export default function AppRoutes() {
           path="/"
           element={
             <PublicOnlyRoute session={session} ready={ready}>
-              <LandingPage
-                onLaunchDemo={() => navigate('/app/dashboard')}
-                onGoToWhyUs={() => navigate('/why-us')}
-                onGoToAIShowcase={() => navigate('/ai-showcase')}
-                onGoToPricing={() => navigate('/pricing')}
-                onGoToHelpCenter={() => navigate('/help-center')}
-              />
+              <ErrorBoundary pageName="LandingPage">
+                <LandingPage
+                  onLaunchDemo={() => navigate('/app/dashboard')}
+                  onGoToWhyUs={() => navigate('/why-us')}
+                  onGoToAIShowcase={() => navigate('/ai-showcase')}
+                  onGoToPricing={() => navigate('/pricing')}
+                  onGoToHelpCenter={() => navigate('/help-center')}
+                />
+              </ErrorBoundary>
             </PublicOnlyRoute>
           }
         />
@@ -197,7 +195,9 @@ export default function AppRoutes() {
           path="/why-us"
           element={
             <PublicOnlyRoute session={session} ready={ready}>
-              <WhyUsPage onBack={() => navigate('/')} onLaunchDemo={() => navigate('/app/dashboard')} />
+              <ErrorBoundary pageName="WhyUsPage">
+                <WhyUsPage onBack={() => navigate('/')} onLaunchDemo={() => navigate('/app/dashboard')} />
+              </ErrorBoundary>
             </PublicOnlyRoute>
           }
         />
@@ -205,7 +205,9 @@ export default function AppRoutes() {
           path="/ai-showcase"
           element={
             <PublicOnlyRoute session={session} ready={ready}>
-              <AIShowcasePage onBack={() => navigate('/')} onLaunchDemo={() => navigate('/app/dashboard')} />
+              <ErrorBoundary pageName="AIShowcasePage">
+                <AIShowcasePage onBack={() => navigate('/')} onLaunchDemo={() => navigate('/app/dashboard')} />
+              </ErrorBoundary>
             </PublicOnlyRoute>
           }
         />
@@ -213,13 +215,15 @@ export default function AppRoutes() {
           path="/pricing"
           element={
             <PublicOnlyRoute session={session} ready={ready}>
-              <PricingPage
-                onBack={() => navigate('/')}
-                onSelectPlan={(planId: PlanId) => {
-                  setSelectedPlan(planId);
-                  navigate('/signup');
-                }}
-              />
+              <ErrorBoundary pageName="PricingPage">
+                <PricingPage
+                  onBack={() => navigate('/')}
+                  onSelectPlan={(planId: PlanId) => {
+                    setSelectedPlan(planId);
+                    navigate('/signup');
+                  }}
+                />
+              </ErrorBoundary>
             </PublicOnlyRoute>
           }
         />
@@ -227,39 +231,50 @@ export default function AppRoutes() {
           path="/signup"
           element={
             <PublicOnlyRoute session={session} ready={ready}>
-              <SignupPage
-                onBack={() => navigate('/pricing')}
-                onSuccess={handleLogin}
-                selectedPlan={selectedPlan}
-                signIn={signIn}
-                signInWithGoogle={signInWithGoogle}
-              />
+              <ErrorBoundary pageName="SignupPage">
+                <SignupPage
+                  onBack={() => navigate('/pricing')}
+                  onSuccess={handleLogin}
+                  selectedPlan={selectedPlan}
+                  signIn={signIn}
+                  signInWithGoogle={signInWithGoogle}
+                />
+              </ErrorBoundary>
             </PublicOnlyRoute>
           }
         />
-        <Route path="/help-center" element={<HelpCenterPage onBack={() => navigate('/')} />} />
+        <Route
+          path="/help-center"
+          element={
+            <ErrorBoundary pageName="HelpCenterPage">
+              <HelpCenterPage onBack={() => navigate('/')} />
+            </ErrorBoundary>
+          }
+        />
         <Route
           path="/login"
           element={
             <PublicOnlyRoute session={session} ready={ready}>
               <Suspense fallback={<PageLoader />}>
-                {NEW_UX ? (
-                  <LoginPageV2
-                    onLogin={handleLogin}
-                    onBack={() => navigate('/')}
-                    signIn={signIn}
-                    signUp={signUp}
-                    signInWithGoogle={signInWithGoogle}
-                  />
-                ) : (
-                  <LoginPage
-                    onLogin={handleLogin}
-                    onBack={() => navigate('/')}
-                    signIn={signIn}
-                    signUp={signUp}
-                    signInWithGoogle={signInWithGoogle}
-                  />
-                )}
+                <ErrorBoundary pageName="LoginPage">
+                  {NEW_UX ? (
+                    <LoginPageV2
+                      onLogin={handleLogin}
+                      onBack={() => navigate('/')}
+                      signIn={signIn}
+                      signUp={signUp}
+                      signInWithGoogle={signInWithGoogle}
+                    />
+                  ) : (
+                    <LoginPage
+                      onLogin={handleLogin}
+                      onBack={() => navigate('/')}
+                      signIn={signIn}
+                      signUp={signUp}
+                      signInWithGoogle={signInWithGoogle}
+                    />
+                  )}
+                </ErrorBoundary>
               </Suspense>
             </PublicOnlyRoute>
           }
@@ -323,7 +338,9 @@ export default function AppRoutes() {
                         <PageLoader />
                       ) : (
                         <>
-                          <Suspense fallback={<PageLoader />}>{renderPage()}</Suspense>
+                          <ErrorBoundary pageName={currentPage}>
+                            <Suspense fallback={<PageLoader />}>{renderPage()}</Suspense>
+                          </ErrorBoundary>
                           {currentPage === 'dashboard' && (
                             <div className="mt-6">
                               <AIPartnersShowcase />
@@ -341,6 +358,7 @@ export default function AppRoutes() {
                     <GlobalCopilotSidebar onNavigate={navigateToPage} />
                   </Suspense>
                 )}
+                <OfflineBanner />
               </ToastProvider>
             </ProtectedRoute>
           }
@@ -357,7 +375,9 @@ export default function AppRoutes() {
           path="/superadmin"
           element={
             <ProtectedRoute session={session} ready={ready}>
-              <SuperAdminPage onBack={() => navigate('/app/dashboard')} />
+              <ErrorBoundary pageName="SuperAdminPage">
+                <SuperAdminPage onBack={() => navigate('/app/dashboard')} />
+              </ErrorBoundary>
             </ProtectedRoute>
           }
         />
